@@ -7,7 +7,7 @@
                 "pressure" : 0.0,
                 "units" : "metal",
                 "pair_style" : "eam/fs",
-                "pair_coeff" : "* * /pscratch/sd/z/zye/parsl/exa-pd-main-08-21-2025/test_AlSm/input/v4_1_Al3Sm.eam.fs Al Sm"
+                "pair_coeff" : "* * /global/homes/m/moraru/Parsl-Project/exa-pd-configs/input/v4_1_Al3Sm.eam.fs Al Sm"
         },
         "run" : {
                 "ngpu" : 4,
@@ -16,13 +16,14 @@
                 "cpu_account" : "m4802",
                 "qos" : "premium",
                 "cpu_exe" : "lmp",
-                "gpu_exe" : "/global/homes/z/zye/lammps/src/lmp_serial"
+                "gpu_exe" : "/global/cfs/cdirs/m4802/Thrust2/lmp_exe/lmp_gpu_serial",
+                "parsl_config" : "perlmutter_single_alloc"
         },
         "solid" : {
                 "mode" : "scratch",
                 "phases" : [
-                        "./input/fcc-Al.cif",
-                        "./input/Al3Sm.cif"
+                        "/global/homes/m/moraru/Parsl-Project/exa-pd-configs/input/fcc-Al.cif",
+                        "/global/homes/m/moraru/Parsl-Project/exa-pd-configs/input/Al3Sm.cif"
                 ],
                 "Tmin" : 700,
                 "Tmax" : 1500,
@@ -30,12 +31,12 @@
         },
         "liquid" : {
                 "mode" : "scratch",
-                "data_in" : "./input/data.in",
+                "data_in" : "/global/homes/m/moraru/Parsl-Project/exa-pd-configs/input/data.in",
                 "initial_comp" : [1, 0],
                 "final_comp" : [0.75, 0.25],
                 "ncomp" : 2,
                 "ref_pair_style" : "eam/fs",
-                "ref_pair_coeff" : "* * /pscratch/sd/z/zye/parsl/exa-pd-main-08-21-2025/test_AlSm/input/v4_1_Al3Sm.eam.fs Al Al",
+                "ref_pair_coeff" : "* * /global/homes/m/moraru/Parsl-Project/exa-pd-configs/input/v4_1_Al3Sm.eam.fs Al Al",
                 "dlbd" : 0.25,
                 "Tmin" : 700,
                 "Tmax" : 1500,

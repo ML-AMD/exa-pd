@@ -1,7 +1,7 @@
-from lammpsJob import *
-from alchem import *
-from einstein import *
-from tramp import *
+from jobs.lammpsJob import *
+from jobs.alchem import *
+from jobs.einstein import *
+from jobs.tramp import *
 import matplotlib.pyplot as plt
 import os
 import sys

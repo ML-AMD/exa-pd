@@ -1,8 +1,8 @@
 import numpy as np
 import os
 import scipy
-from lammpsJob import *
-from utils import *
+from jobs.lammpsJob import *
+from tools.utils import *
 
 class einstein(lammpsJobGroup):
     '''

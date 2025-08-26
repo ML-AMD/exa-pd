@@ -1,4 +1,4 @@
-from lammpsJob import *
+from jobs.lammpsJob import *
 from postprocess import *
 import json
 

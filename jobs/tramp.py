@@ -1,7 +1,7 @@
 import numpy as np
 import os
-from lammpsJob import *
-from utils import *
+from jobs.lammpsJob import *
+from tools.utils import *
 import sys
 
 
