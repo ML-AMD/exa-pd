@@ -150,7 +150,7 @@ class alchem(lammpsJobGroup):
             #    raise Exception(f"Error: job is not done in {jobdir} for post processing!")
             job = lammpsJob(directory=jobdir)
             [U0, U1] = job.sample(varList=["c_U0", "c_U1"],
-                    logfile="log.lammps", skip=2000)
+                    logfile="log.lammps")
             dU.append([lbd, U1-U0])
         dU = np.asarray(dU)
         dG = scipy.integrate.simpson(dU[:,1], dU[:,0])

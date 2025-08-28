@@ -7,7 +7,7 @@ def gpu_lammps(directory, script, lmp_exe, run_para="", dep_future = None, stdou
     dir="{directory}"
     cd {directory}
     echo "Running command: {lmp_exe} -sf gpu -pk gpu 1 -in {script} {run_para} > lmp.out"
-    {lmp_exe} -sf gpu -pk gpu 1 -in {script} {run_para} > lmp.out
+    {lmp_exe} -in {script} {run_para} > lmp.out
     touch DONE
     exapd_logger.info(f"Done job: {directory}")
     """

@@ -131,6 +131,6 @@ class tramp(lammpsJobGroup):
             #    raise Exception("Error: job is not done in {Tdir} for post processing!") 
             job = lammpsJob(directory=Tdir)
             [T, H] = job.sample(varList=["Temp", "Enthalpy"], 
-                    logfile="log.lammps", skip=2000)
+                    logfile="log.lammps")
             H_of_T.append([T, H])
         return np.array(H_of_T)

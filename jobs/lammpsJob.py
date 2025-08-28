@@ -35,12 +35,12 @@ class lammpsJob:
     def get_depend(self):
         return self._depend
 
-    def sample(self, varList=["PotEng"], logfile="log.lammps", skip=2000):
+    def sample(self, varList=["PotEng"], logfile="log.lammps", skip=0.2):
         '''
         sample the average for a list of variables from LAMMPS output
         varName: name of the quantity to be sampled, pe, ke, Volume ...
         logfile: output file, default is log.lammps
-        skip: number of lines to be skipped for establishing an equilibrium
+        skip: fraction of lines to be skipped for establishing an equilibrium
         '''
         outfile = f"{self._dir}/{logfile}"
         if not os.path.exists(outfile):
@@ -61,10 +61,10 @@ class lammpsJob:
                 sys.exit(1)
         data = np.loadtxt(outfile, skiprows=beginline, max_rows=endline-beginline,
                 usecols=cols, ndmin=2)
-        if data.shape[0] <= skip:
-            skip = 0
-            print("Warning: not enough data to be skipped, reset skip = 0.")
-        return np.mean(data[skip:,:], axis=0)
+        #if data.shape[0] <= skip:
+        #    skip = 0
+        #    print("Warning: not enough data to be skipped, reset skip = 0.")
+        return np.mean(data[int(skip*len(data)):,:], axis=0)
 
 class lammpsJobGroup:
     ''' 

@@ -168,7 +168,7 @@ def solidJobs(general, solid):
         pre_var_values = "Xlo Xhi Ylo Yhi Zlo Zhi".split()
         if barostat == "tri":
             pre_var_names += "fxy fxz fyz".split()
-            pr_var_vaues += "Xy Xz Yz".split()
+            pre_var_values += "Xy Xz Yz".split()
         for i in range(ntyp): # msd
             if nab[i] > 0:
                 pre_var_names.append(f"msd{i+1}")

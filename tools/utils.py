@@ -86,7 +86,7 @@ def get_lammps_barostat(data_in, eps=1e-3):
     else:
         return "aniso"
 
-def create_lammps_supercell(system, infile, outfile, ntarget=5000, eps=1.e-3):
+def create_lammps_supercell(system, infile, outfile, ntarget=500, eps=1.e-3):
     '''
     create a supercell in lammps format from a crystal structure file.
     system: list of elements in the system
