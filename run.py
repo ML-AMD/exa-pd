@@ -101,13 +101,13 @@ if __name__ == '__main__':
         if job._arch == "cpu":
             try:
                 parsl_job_dict[job_dir] = cpu_lammps(job._dir,job._script,\
-                    lmp_cpu_exe, run_para="", dep_future=parsl_job_dict[job._depend[0]], depend=job._depend)
+                    lmp_cpu_exe, dep_future=parsl_job_dict[job._depend[0]], depend=job._depend)
             except Exception as e:
                 exapd_logger.warning(f"{e}: Launching cpu job failed: {job_dir}")
         if job._arch == "gpu":
             try:
                 parsl_job_dict[job_dir] = gpu_lammps(job._dir,job._script,\
-                    lmp_gpu_exe, run_para="", dep_future=parsl_job_dict[job._depend[0]], depend=job._depend)
+                    lmp_gpu_exe, dep_future=parsl_job_dict[job._depend[0]], depend=job._depend)
             except Exception as e:
                 exapd_logger.warning(f"{e}: Launching gpu job failed: {job_dir}")
 
