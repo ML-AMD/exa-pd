@@ -1,93 +1,116 @@
-from lammpsJob import *
-from setup import *
+from jobs.lammpsJob import *
+from tools.setup import *
 import json
-
-inp = json.load(open("input.json", "r"))
-# set up general parameters 
-general = lammpsPara(inp["general"])
-
-# set up liquid jobs
-#liq_jobs = liquidJobs(general, inp["liquid"])
-
-# set up solid jobs
-sol_jobs = solidJobs(general, inp["solid"])
-
-#jobs = liq_jobs + sol_jobs
-jobs = sol_jobs
-print(len(jobs))
-# launch jobs
-### set up parsl
 import parsl
 from parsl import wait_for_current_tasks
-from parslTools import PerlmutterConfig
-from parslTools import cpu_lammps, gpu_lammps
+from parsl_configs.perlmutter import PerlmutterConfig
+from parsl_tasks.lammps import cpu_lammps, gpu_lammps
+from tools.logging_config import exapd_logger
+from tools.config_manager import ConfigManager
+from parsl_configs.config_registry import load_parsl_config
 
-parsl.load(PerlmutterConfig())
+if __name__ == '__main__':
+    inp = ConfigManager()
+    run_config = inp["run"]
 
-lmp_jobs_dict={}
-for job in jobs:
-    lmp_jobs_dict[job._dir]=job
+    load_parsl_config(run_config)
+    exapd_logger.configure("INFO")
 
-for job_dir,job in lmp_jobs_dict.items():
-    if job._depend is not None:
-        print(job_dir, job._arch, job._depend[0])
-    else:
-        print(job_dir, job._arch, job._depend)
+    # set up general parameters
+    try:
+        general = lammpsPara(inp["general"])
+    except Exception as e:
+        exapd_logger.critical(f"{e}: Setting up lammpsPara failed")
 
-pre_dict = {}
-reg_dict = {}
-dep_dict = {}
-for job_dir,job in lmp_jobs_dict.items():
-    reg_dict[job_dir] = job
-    if job._depend != None:
-        dep_dict[job._dir] = job
-        if not job._depend[0] in pre_dict:
-            pre_dict[job._depend[0]] = lmp_jobs_dict[job._depend[0]]
+    # set up liquid jobs
+    try:
+        liq_jobs = liquidJobs(general, inp["liquid"])
+    except Exception as e:
+        exapd_logger.critical(f"{e}: Setting up liquid jobs failed")
 
-for job_dir in pre_dict:
-    if job_dir in reg_dict:
-        del reg_dict[job_dir]
+    # set up solid jobs
+    try:
+        sol_jobs = solidJobs(general, inp["solid"])
+    except Exception as e:
+        exapd_logger.critical(f"{e}: Setting up solid jobs failed")
 
-for job_dir in dep_dict:
-    if job_dir in dep_dict:
-        del reg_dict[job_dir]
+    jobs = liq_jobs + sol_jobs
+    print('Number of MD jobs', len(jobs))
 
-print("pre_job",len(pre_dict))
-for job_dir in pre_dict: print(job_dir)
-print("reg_job",len(reg_dict))
-for job_dir in reg_dict: print(job_dir)
-print("dep_job",len(dep_dict))
-for job_dir in dep_dict: print(job_dir)
+    # launch jobs
+    lmp_jobs_dict = {}
+    for job in jobs:
+        lmp_jobs_dict[job._dir] = job
 
-parsl_job_dict={}
-lmp_exe = "/global/homes/f/fzhang/install/lammps/src/lmp_gpu_serial"
-for job_dir,job in pre_dict.items():
-    if job._arch == "cpu":
-        parsl_job_dict[job_dir] = cpu_lammps(job._dir,job._script)
-    if job._arch == "gpu":
-        parsl_job_dict[job_dir] = gpu_lammps(job._dir,job._script,lmp_exe)
+    for job_dir, job in lmp_jobs_dict.items():
+        if job._depend is not None:
+            print(job_dir, job._arch, job._depend[0])
+        else:
+            print(job_dir, job._arch, job._depend)
 
-for job_dir,job in reg_dict.items():
-    if job._arch == "cpu":
-        parsl_job_dict[job_dir] = cpu_lammps(job._dir,job._script)
-    if job._arch == "gpu":
-        parsl_job_dict[job_dir] = gpu_lammps(job._dir,job._script,lmp_exe)
+    pre_dict = {}
+    reg_dict = {}
+    dep_dict = {}
+    for job_dir, job in lmp_jobs_dict.items():
+        reg_dict[job_dir] = job
+        if job._depend is not None:
+            dep_dict[job._dir] = job
+            if not job._depend[0] in pre_dict:
+                pre_dict[job._depend[0]] = lmp_jobs_dict[job._depend[0]]
 
-from lammpsJob import pre_process
-for job_dir,job in dep_dict.items():
-    parsl_job_dict[job._depend[0]].result()
-    run_para = pre_process(job._depend)
-    if job._arch == "cpu":
-        parsl_job_dict[job_dir] = cpu_lammps(job._dir,job._script,run_para=run_para)
-    if job._arch == "gpu":
-        parsl_job_dict[job_dir] = gpu_lammps(job._dir,job._script,lmp_exe,run_para=run_para)
+    for job_dir in pre_dict:
+        if job_dir in reg_dict:
+            del reg_dict[job_dir]
 
+    for job_dir in dep_dict:
+        if job_dir in dep_dict:
+            del reg_dict[job_dir]
 
-wait_for_current_tasks()
-print("all done")
-parsl.dfk().cleanup()
+    print("pre_job", len(pre_dict))
+    print("reg_job", len(reg_dict))
+    print("dep_job", len(dep_dict))
 
-        
+    parsl_job_dict = {}
+    lmp_cpu_exe = run_config["cpu_exe"]
+    lmp_gpu_exe = run_config["gpu_exe"]
+    for job_dir, job in pre_dict.items():
+        if job._arch == "cpu":
+            try:
+                parsl_job_dict[job_dir] = cpu_lammps(job._dir, job._script, lmp_cpu_exe)
+            except Exception as e:
+                exapd_logger.warning(f"{e}: Launching cpu job failed: {job_dir}")
+        if job._arch == "gpu":
+            try:
+                parsl_job_dict[job_dir] = gpu_lammps(job._dir, job._script, lmp_gpu_exe)
+            except Exception as e:
+                exapd_logger.warning(f"{e}: Launching gpu job failed: {job_dir}")
 
+    for job_dir, job in reg_dict.items():
+        if job._arch == "cpu":
+            try:
+                parsl_job_dict[job_dir] = cpu_lammps(job._dir, job._script, lmp_cpu_exe)
+            except Exception as e:
+                exapd_logger.warning(f"{e}: Launching cpu job failed: {job_dir}")
+        if job._arch == "gpu":
+            try:
+                parsl_job_dict[job_dir] = gpu_lammps(job._dir, job._script, lmp_gpu_exe)
+            except Exception as e:
+                exapd_logger.warning(f"{e}: Launching gpu job failed: {job_dir}")
 
+    for job_dir, job in dep_dict.items():
+        if job._arch == "cpu":
+            try:
+                parsl_job_dict[job_dir] = cpu_lammps(job._dir, job._script,
+                                                     lmp_cpu_exe, dep_future=parsl_job_dict[job._depend[0]], depend=job._depend)
+            except Exception as e:
+                exapd_logger.warning(f"{e}: Launching cpu job failed: {job_dir}")
+        if job._arch == "gpu":
+            try:
+                parsl_job_dict[job_dir] = gpu_lammps(job._dir, job._script,
+                                                     lmp_gpu_exe, dep_future=parsl_job_dict[job._depend[0]], depend=job._depend)
+            except Exception as e:
+                exapd_logger.warning(f"{e}: Launching gpu job failed: {job_dir}")
 
+    wait_for_current_tasks()
+    print("all done")
+    parsl.dfk().cleanup()
