@@ -4,8 +4,9 @@ from parsl.providers import SlurmProvider
 from parsl.launchers import SrunLauncher, SingleNodeLauncher
 from parsl.executors import HighThroughputExecutor
 
+
 class PerlmutterConfig(Config):
-    def __init__(self,run_config):
+    def __init__(self, run_config):
         gpu_executor = HighThroughputExecutor(
             label="gpu",
             max_workers_per_node=4,
@@ -21,8 +22,8 @@ class PerlmutterConfig(Config):
                 launcher=SrunLauncher(),
                 scheduler_options="#SBATCH --gpus-per-node=4",
                 walltime='24:00:00',
-                )
             )
+        )
 
         cpu_executor = HighThroughputExecutor(
             label="cpu",
@@ -38,9 +39,9 @@ class PerlmutterConfig(Config):
                 nodes_per_block=run_config["ncpu"],
                 launcher=SingleNodeLauncher(),
                 walltime='24:00:00',
-                )
             )
+        )
 
         super().__init__(
             executors=[gpu_executor, cpu_executor]
-            )
+        )

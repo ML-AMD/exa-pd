@@ -2,6 +2,7 @@ import argparse
 import json
 import sys
 
+
 class ConfigManager:
     def __init__(self):
         parser = argparse.ArgumentParser(description="Config Manager")

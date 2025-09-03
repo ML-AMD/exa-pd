@@ -1,6 +1,7 @@
 import parsl
 from parsl_config_registry import CONFIG_REGISTRY
 
+
 def load_parsl_config(run_config: dict):
     config_name = run_config["parsl_config"]
     if config_name not in CONFIG_REGISTRY:

@@ -5,6 +5,7 @@ import parsl
 Copied from logging_config.py of Thrust1
 """
 
+
 class ExaPdLogger:
     """
     Lightweight logging utility.

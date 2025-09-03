@@ -7,17 +7,18 @@ import sys
 
 class tramp(lammpsJobGroup):
     '''
-    set up lammps jobs for temperature ramping for any phae (liquid or solid) 
+    set up lammps jobs for temperature ramping for any phae (liquid or solid)
     '''
+
     def __init__(self,
-            data_in,          # initial structure file in lammps format 
-            Tlist,            # list of temperatures to equilibrate
-            directory,        # path to group directory
-            mode="scratch",   # scratch, restart or process
-            nab=None,         # number of atoms of each type, [na, nb, ...],
-                              # if given, change comp in data_in accordingly
-            barostat="iso",   # barostat for npt, if "none", run nvt
-            ):
+                 data_in,          # initial structure file in lammps format
+                 Tlist,            # list of temperatures to equilibrate
+                 directory,        # path to group directory
+                 mode="scratch",   # scratch, restart or process
+                 nab=None,         # number of atoms of each type, [na, nb, ...],
+                 # if given, change comp in data_in accordingly
+                 barostat="iso",   # barostat for npt, if "none", run nvt
+                 ):
         super().__init__(directory)
         self._datain = data_in
         self._Tlist = Tlist
@@ -35,18 +36,18 @@ class tramp(lammpsJobGroup):
 
     def setup(self, general, boxdims=False, msd=False):
         '''
-        if boxdims=True, output detailed box dimensions, 
+        if boxdims=True, output detailed box dimensions,
         otherwise only output volume.
         if msd=Ture, calculate msd for each elements.
         '''
         natom = self._natom
-        H_of_T = [] # only used in post processing
+        H_of_T = []  # only used in post processing
         for T in self._Tlist:
-            Tdir = f"{self._dir}/T{T:g}" 
+            Tdir = f"{self._dir}/T{T:g}"
             scriptFile = f"{Tdir}/lmp.in"
             if self._mode == "scratch":
                 job = lammpsJob(directory=Tdir,
-                        scriptFile=scriptFile)
+                                scriptFile=scriptFile)
                 self.write_script(job._script, general, T, boxdims, msd)
                 self._jobList.append(job)
             elif self._mode == "restart":
@@ -60,7 +61,7 @@ class tramp(lammpsJobGroup):
                 self._jobList.append(job)
         return 0
 
-    def write_script(self, scriptFile, general, T, boxdims, msd):        
+    def write_script(self, scriptFile, general, T, boxdims, msd):
         f = open(scriptFile, 'wt')
         f.write(f"#  Equilibrate the structure for T = {T}\n")
         f.write("\n")
@@ -71,7 +72,7 @@ class tramp(lammpsJobGroup):
         f.write("\n")
         f.write(f"read_data       {self._datain}\n")
         f.write("\n")
-        if self._resetTypes: # change composition in data_in
+        if self._resetTypes:  # change composition in data_in
             f.write(reset_types(self._nab, self._natom))
         f.write(general.pair._cmd)
         if general.neighbor is not None:
@@ -81,7 +82,7 @@ class tramp(lammpsJobGroup):
         if general.mass is not None:
             if isinstance(general.mass, list):
                 for i in range(len(general.mass)):
-                    f.write(f"mass            {i+1} {general.mass[i]}\n")
+                    f.write(f"mass            {i + 1} {general.mass[i]}\n")
             else:
                 f.write(f"mass            * {general.mass}\n")
         f.write("\n")
@@ -101,36 +102,37 @@ class tramp(lammpsJobGroup):
             baro_style = f"{self._barostat} {general.pressure} {general.pressure} {general.Pdamp}"
         else:
             baro_style = f"x {general.pressure} {general.pressure} {general.Pdamp} "\
-                       + f"y {general.pressure} {general.pressure} {general.Pdamp} "\
-                       + f"z {general.pressure} {general.pressure} {general.Pdamp} "\
-                       + self._barostat
+                + f"y {general.pressure} {general.pressure} {general.Pdamp} "\
+                + f"z {general.pressure} {general.pressure} {general.Pdamp} "\
+                + self._barostat
         f.write(f"fix             1 all npt temp {T:g} {T:g} {general.Tdamp} {baro_style}\n")
         if msd:
             # pre-equilibrate to account for volume change
             f.write("\n")
-            f.write(f"run             {int(0.1*general.run)}\n")
+            f.write(f"run             {int(0.1 * general.run)}\n")
             for i in range(self._ntyp):
                 if self._nab[i] > 0:
-                    f.write(f"group           g{i+1} type {i+1}\n")
-                    f.write(f"compute         c{i+1} g{i+1} msd com yes\n")
-                    thermo_style += f" c_c{i+1}[4]"
+                    f.write(f"group           g{i + 1} type {i + 1}\n")
+                    f.write(f"compute         c{i + 1} g{i + 1} msd com yes\n")
+                    thermo_style += f" c_c{i + 1}[4]"
         f.write("\n")
         f.write(f"thermo_style    {thermo_style}\n")
         f.write("thermo_modify   lost error norm yes\n")
         f.write(f"run             {general.run}\n")
         f.write("\n")
         f.close()
+
     def process(self):
         natom = self._natom
-        H_of_T = [] # only used in post processing
+        H_of_T = []  # only used in post processing
         for T in self._Tlist:
-            Tdir = f"{self._dir}/T{T:g}" 
+            Tdir = f"{self._dir}/T{T:g}"
             if not os.path.isdir(Tdir):
                 raise Exception(f"Error: {Tdir} does not exist for post processing!")
-            #if not os.path.exists(f"{Tdir}/done"):
-            #    raise Exception("Error: job is not done in {Tdir} for post processing!") 
+            # if not os.path.exists(f"{Tdir}/done"):
+            #    raise Exception("Error: job is not done in {Tdir} for post processing!")
             job = lammpsJob(directory=Tdir)
-            [T, H] = job.sample(varList=["Temp", "Enthalpy"], 
-                    logfile="log.lammps")
+            [T, H] = job.sample(varList=["Temp", "Enthalpy"],
+                                logfile="log.lammps")
             H_of_T.append([T, H])
         return np.array(H_of_T)

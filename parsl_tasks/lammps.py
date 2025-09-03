@@ -1,6 +1,7 @@
 import parsl
 from parsl import python_app, bash_app
 
+
 @bash_app(executors=["gpu"])
 def gpu_lammps(directory, script, lmp_exe,
                dep_future=None, depend=None,
