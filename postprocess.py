@@ -6,9 +6,10 @@ import matplotlib.pyplot as plt
 import os
 import sys
 
+
 def process_liquid(general, liquid, T0, G0, write_file=True):
-    ''' 
-    post-process liquid calculations. 
+    '''
+    post-process liquid calculations.
     G0: Gibbs free energy of the pure phase at T = T_alchem (Tlist[-1])
     '''
     liq_dir = f"{general.proj_dir}/liquid"
@@ -18,31 +19,31 @@ def process_liquid(general, liquid, T0, G0, write_file=True):
     comp0 = liquid["initial_comp"]
     comp1 = liquid["final_comp"]
     try:
-        ncomp = liquid["ncomp"] 
-    except:
+        ncomp = liquid["ncomp"]
+    except KeyError:
         ncomp = 10
     try:
         dlbd = liquid["dlbd"]
-    except:
+    except KeyError:
         dlbd = 0.05
     Tmin = liquid["Tmin"]
     Tmax = liquid["Tmax"]
     dT = liquid["dT"]
-    Tlist = np.arange(Tmin, Tmax+0.1*dT, dT)
-    # create a finer T-mesh for smooth free energy 
+    Tlist = np.arange(Tmin, Tmax + 0.1 * dT, dT)
+    # create a finer T-mesh for smooth free energy
     if general.units == "lj":
         kb = 1
         ddT = 0.01
     else:
         kb = 8.617333262e-5
         ddT = 10
-    Tall = np.arange(min(Tlist), max(Tlist)+0.1*ddT, ddT)
+    Tall = np.arange(min(Tlist), max(Tlist) + 0.1 * ddT, ddT)
     tdb = ''  # entry of the liquid phase in the TDB file
     natom, ntyp = read_lmp_data(data_in)
     n0 = natom * np.asarray(comp0)
     n1 = natom * np.asarray(comp1)
-    dn = (n1-n0) / ncomp
-    xall = np.zeros(ncomp+1)
+    dn = (n1 - n0) / ncomp
+    xall = np.zeros(ncomp + 1)
     for icomp in range(0, ncomp + 1):
         n = n0 + icomp * dn
         n = n.astype(int)
@@ -56,36 +57,36 @@ def process_liquid(general, liquid, T0, G0, write_file=True):
         compdir = f"{liq_dir}/comp{icomp}"
         if not os.path.isdir(compdir):
             raise Exception(f"{compdir} does not exist for post-processing!")
-        #  process alchem jobs 
+        #  process alchem jobs
         if icomp > 0:
             liq_alchem = alchem(data_in, dlbd, Tmax, f"{compdir}/alchem", mode="process", nab=n)
             det_G = liq_alchem.process(general)
         # process T-ramping jobs
-        liq_tramp = tramp(data_in, Tlist, f"{compdir}/tramp", mode="process",  nab=n)
+        liq_tramp = tramp(data_in, Tlist, f"{compdir}/tramp", mode="process", nab=n)
         res = liq_tramp.process()
         if general.units == "lj":
             dT = 0.01
         else:
             dT = 10
-        arrT, arrH = fix_enthalpy(res[:,0], res[:,1], phase="liquid")
+        arrT, arrH = fix_enthalpy(res[:, 0], res[:, 1], phase="liquid")
         if icomp == 0:
             G = Gibbs_Helmholtz(arrT, arrH, T0, G0, Tall)
-            Gall = G.reshape(-1,1)  
+            Gall = G.reshape(-1, 1)
         else:
-            G = Gibbs_Helmholtz(arrT, arrH, Tlist[-1], Gall[-1,0]+det_G, Tall)
-            Gall = np.column_stack((Gall,G))
+            G = Gibbs_Helmholtz(arrT, arrH, Tlist[-1], Gall[-1, 0] + det_G, Tall)
+            Gall = np.column_stack((Gall, G))
         xall[icomp] = 1 - n[0] / natom
     if write_file:
         header = "Gibbs free energy of the liquid phase\n   T  x = "
         for x in xall:
             header += f"{x:.6f} "
-        np.savetxt(f"{general.proj_dir}/g.liq.dat", 
-              np.column_stack((Tall,Gall)), fmt="%.6f", header=header)  
+        np.savetxt(f"{general.proj_dir}/g.liq.dat",
+                   np.column_stack((Tall, Gall)), fmt="%.6f", header=header)
 
-    # fitting to log-poly function for end member 
-    G0 = Gall[:,0]
+    # fitting to log-poly function for end member
+    G0 = Gall[:, 0]
     if xall[-1] == 1:
-        G1 = Gall[:,-1]
+        G1 = Gall[:, -1]
     else:
         G1 = np.zeros(len(Tall))
     res = scipy.optimize.curve_fit(tlogpoly, Tall, G0, np.ones(6))
@@ -105,10 +106,10 @@ def process_liquid(general, liquid, T0, G0, write_file=True):
         for ix, x in enumerate(xall):
             G_m0 = (1 - x) * G0[iT] + x * G1[iT]
             if (x == 0 or x == 1.):
-               G_mix = 0
+                G_mix = 0
             else:
-               G_mix = kb*T * (x * np.log(x) + (1 - x) * np.log(1 - x))
-            ydata.append(Gall[iT,ix] - G_m0 - G_mix)
+                G_mix = kb * T * (x * np.log(x) + (1 - x) * np.log(1 - x))
+            ydata.append(Gall[iT, ix] - G_m0 - G_mix)
         xdata = np.append(xall, 1)
         ydata.append(0)
         # least square fitting
@@ -117,44 +118,45 @@ def process_liquid(general, liquid, T0, G0, write_file=True):
     rkparams = np.array(rkparams)
     # fit log-poly function for T-dependence
     for i in range(4):
-        res = scipy.optimize.curve_fit(tlogpoly, Tall, rkparams[:,i], np.ones(6))
+        res = scipy.optimize.curve_fit(tlogpoly, Tall, rkparams[:, i], np.ones(6))
         params = res[0]
         print(*params)
         tdb += f"{rk[i]} {Tlist[0]} {params[0]:+.12g}{params[1]:+.12g}*T\n"
         tdb += f"   {params[2]:+.12g}*T*LN(T){params[3]:+.12g}*T**2{params[4]:+.12g}*T**(-1)\n"
         tdb += f"   {params[5]:+.12g}*T**3; {Tlist[-1]} N !\n"
         tdb += "\n"
-    return tdb 
+    return tdb
+
 
 def process_solid(general, solid, write_file=True):
-    ''' 
+    '''
     postprocess solid calculations
     '''
     sol_dir = f"{general.proj_dir}/solid"
     if not os.path.isdir(sol_dir):
         raise Exception(f"{sol_dir} does not exist for post-processing job!")
-        
+
     phases = solid["phases"]
     try:
         dlbd = solid["dlbd"]
-    except:
+    except KeyError:
         dlbd = 0.05
     Tmin = solid["Tmin"]
     Tmax = solid["Tmax"]
     dT = solid["dT"]
-    Tlist = np.arange(Tmin, Tmax+0.1*dT, dT)
-    # create a finer T-mesh for smooth free energy 
+    Tlist = np.arange(Tmin, Tmax + 0.1 * dT, dT)
+    # create a finer T-mesh for smooth free energy
     if general.units == "lj":
         ddT = 0.01
     else:
         ddT = 10
-    Tall = np.arange(min(Tlist), max(Tlist)+0.1*ddT, ddT)
-    tdb = '' # entries for solid phases in the TDB file
+    Tall = np.arange(min(Tlist), max(Tlist) + 0.1 * ddT, ddT)
+    tdb = ''  # entries for solid phases in the TDB file
     for ph in phases:
         # supports lammps format or other formats that can be converted
         # to lammps format by ASE.
         ph_file = os.path.abspath(ph)
-        name, form = ph_file.split('/')[-1].split('.') 
+        name, form = ph_file.split('/')[-1].split('.')
         phdir = f"{sol_dir}/{name}"
         if not os.path.isdir(phdir):
             raise Exception(f"{phdir} does not exist for post-processing job!")
@@ -164,9 +166,9 @@ def process_solid(general, solid, write_file=True):
             data_in = f"{phdir}/{name}.lammps"
         barostat = get_lammps_barostat(data_in)
         #  process tramp jobs
-        sol_tramp = tramp(data_in, Tlist, f"{phdir}/tramp") 
+        sol_tramp = tramp(data_in, Tlist, f"{phdir}/tramp")
         res = sol_tramp.process()
-        arrT, arrH = fix_enthalpy(res[:,0], res[:,1], phase="solid") 
+        arrT, arrH = fix_enthalpy(res[:, 0], res[:, 1], phase="solid")
         # process einstein jobs
         natom, ntyp, nab = read_lmp_data(data_in, read_nab=True)
         pre_job_dir = f"{phdir}/tramp/T{Tlist[0]:g}"
@@ -174,20 +176,20 @@ def process_solid(general, solid, write_file=True):
         pre_var_values = "Xlo Xhi Ylo Yhi Zlo Zhi".split()
         if barostat == "tri":
             pre_var_names += "fxy fxz fyz".split()
-            pr_var_vaues += "Xy Xz Yz".split()
-        for i in range(ntyp): # msd
+            pre_var_values += "Xy Xz Yz".split()
+        for i in range(ntyp):  # msd
             if nab[i] > 0:
                 pre_var_names.append(f"msd{i+1}")
                 pre_var_values.append(f"c_c{i+1}[4]")
         depend = (pre_job_dir, pre_var_names, pre_var_values)
-        sol_ti = einstein(data_in, dlbd, Tlist[0],directory=f"{phdir}/einstein")
+        sol_ti = einstein(data_in, dlbd, Tlist[0], directory=f"{phdir}/einstein")
         # calculate G(T) using Gibbs-Helmholtz equation
         G0 = sol_ti.process(general, depend)
         Gall = Gibbs_Helmholtz(arrT, arrH, Tlist[0], G0, Tall)
         if write_file:
-            np.savetxt(f"{general.proj_dir}/g.{name}.dat", 
-                  np.column_stack((Tall,Gall)), fmt="%.6f", 
-                  header=f"Gibbs free energy of the {name} phase\n   T      G")  
+            np.savetxt(f"{general.proj_dir}/g.{name}.dat",
+                       np.column_stack((Tall, Gall)), fmt="%.6f",
+                       header=f"Gibbs free energy of the {name} phase\n   T      G")
         # fitting to log-poly function
         res = scipy.optimize.curve_fit(tlogpoly, Tall, Gall, np.ones(6))
         params = res[0]
@@ -199,12 +201,13 @@ def process_solid(general, solid, write_file=True):
         tdb += f"   {params[5]:+.12g}*T**3; {Tlist[-1]:g} N !\n"
         tdb += "\n"
 
-    return tdb 
+    return tdb
+
 
 def fix_enthalpy(arrT, arrH, phase):
-    ''' 
+    '''
     in T-ramping of a phase, crystallization or melting can occur,
-    causing sudden change of H (kink). 
+    causing sudden change of H (kink).
     use linear extrapolation to get rid of the kink.
     arrT: temperature array;
     arrH: corresponding enthalpy data;
@@ -227,21 +230,22 @@ def fix_enthalpy(arrT, arrH, phase):
         if avg_prev == 0:
             continue
         # detect kink with a sudden change of slope by a factor > 2
-        if abs(dH[i]) > 2.0 * abs(avg_prev): 
+        if abs(dH[i]) > 2.0 * abs(avg_prev):
             # linear interpolate to the last temperature
-            sortedT[i+1] = sortedT[-1]
-            sortedH[i+1] = sortedH[i] + dH[i-1]*(sortedT[i+1]-sortedT[i])
-            sortedT = sortedT[:i+2]
-            sortedH = sortedH[:i+2]
+            sortedT[i + 1] = sortedT[-1]
+            sortedH[i + 1] = sortedH[i] + dH[i - 1] * (sortedT[i + 1] - sortedT[i])
+            sortedT = sortedT[:i + 2]
+            sortedH = sortedH[:i + 2]
             break
     if phase == "liquid":
         return sortedT[::-1], sortedH[::-1]
     else:
         return sortedT, sortedH
 
+
 def Gibbs_Helmholtz(arrT, arrH, T0, G0, Tall):
-    """
-    Compute Gibbs free energy from temperature-enthalpy data 
+    '''
+    Compute Gibbs free energy from temperature-enthalpy data
     using Gibbs-Helmholtz equation.
 
     Parameters:
@@ -252,9 +256,9 @@ def Gibbs_Helmholtz(arrT, arrH, T0, G0, Tall):
 
     Returns:
     Gall: G for Tall
-    """
+    '''
     if not np.all(np.diff(Tall) > 0):
-        raise Exception("Tall should be strictly sorted in ascending order for G-H integration.") 
+        raise Exception("Tall should be strictly sorted in ascending order for G-H integration.")
 
     i0 = np.searchsorted(Tall, T0)
     if Tall[i0] == T0:
@@ -263,7 +267,7 @@ def Gibbs_Helmholtz(arrT, arrH, T0, G0, Tall):
         Tint = np.insert(Tall, i0, T0)
 
     # Interpolate enthalpy values using cubic spline
-    #H = scipy.interpolate.interp1d(x, y, kind='cubic', fill_value='extrapolate')(T)
+    # H = scipy.interpolate.interp1d(x, y, kind='cubic', fill_value='extrapolate')(T)
     interpolator = scipy.interpolate.PchipInterpolator(arrT, arrH, extrapolate=True)
     Hint = interpolator(Tint)
     # Initialize ΔG/T array
@@ -272,9 +276,9 @@ def Gibbs_Helmholtz(arrT, arrH, T0, G0, Tall):
 
     # Compute Gibbs free energy difference over temperature
     for i in range(i0):
-        detG_over_T[i] = scipy.integrate.simpson(Hint[i:i0+1] / Tint[i:i0+1]**2, Tint[i:i0+1])
+        detG_over_T[i] = scipy.integrate.simpson(Hint[i:i0 + 1] / Tint[i:i0 + 1]**2, Tint[i:i0 + 1])
     for i in range(i0, len(Tint)):
-        detG_over_T[i] = -scipy.integrate.simpson(Hint[i0:i+1] / Tint[i0:i+1]**2, Tint[i0:i+1])
+        detG_over_T[i] = -scipy.integrate.simpson(Hint[i0:i + 1] / Tint[i0:i + 1]**2, Tint[i0:i + 1])
 
     # Compute absolute Gibbs free energy
     Gall = (detG_over_T + G0_over_T0) * Tint
@@ -283,61 +287,16 @@ def Gibbs_Helmholtz(arrT, arrH, T0, G0, Tall):
     else:
         return np.delete(Gall, i0)
 
-def Gibbs_Helmholtz2(arrT, arrH, T0, G0, T1, dT):
-    """
-    Compute Gibbs free energy from temperature-enthalpy data 
-    using Gibbs-Helmholtz equation.
-
-    Parameters:
-    arrT, arrH: input T and H values
-    T0: Reference temperature.
-    G0: Gibbs free energy at T0.
-    T1: Target ending temperature.
-    dT>0: T in(de)crement in G(T)
-
-    Returns:
-    T, G: G as a function of T
-    """
-    # Load data
-    #data = np.loadtxt(fileIn)
-    #x, y = data[:, 0], data[:, 1]
-    x, y = arrT, arrH
-
-    # Generate temperature range
-    if T1 > T0:
-        T = np.arange(T0, T1 + 0.1*dT, dT)
-    else:
-        T = np.arange(T0, T1 - 0.1*dT, -dT)
-
-    # Interpolate enthalpy values using cubic spline
-    #H = np.interp(T, x, y)
-    #H = scipy.interpolate.interp1d(x, y, kind='cubic', fill_value='extrapolate')(T)
-    interpolator = scipy.interpolate.PchipInterpolator(arrT, arrH, extrapolate=True)
-    H = interpolator(T)
-    # Initialize ΔG/T array
-    detG_over_T = np.zeros(len(T))
-    detG_over_T[0] = 0
-    G0_over_T0 = G0 / T0
-
-    # Compute Gibbs free energy difference over temperature
-    for i in range(1, len(T)):
-        detG_over_T[i] = -scipy.integrate.simpson(H[:i+1] / T[:i+1]**2, T[:i+1])
-
-    # Compute absolute Gibbs free energy
-    G = (detG_over_T + G0_over_T0) * T
-
-    #out = np.column_stack((T, G))
-    return T, G
 
 def redlich_kister(x, l0, l1, l2, l3):
-    '''   
+    '''
     Redlich-Kister polynomial for regular mixing
     '''
-    return (l0 + l1*(1-2*x) + l2*(1-2*x)**2 + l3*(1-2*x)**3) * x*(1-x)
+    return (l0 + l1 * (1 - 2 * x) + l2 * (1 - 2 * x)**2 + l3 * (1 - 2 * x)**3) * x * (1 - x)
+
 
 def tlogpoly(T, l0, l1, l2, l3, l4, l5):
-    ''' 
-    logrithmic-polynomial function for T dependence 
     '''
-    return l0 + l1*T + l2*T*np.log(T) + l3*T**2 + l4/T + l5*T**3
-
+    logrithmic-polynomial function for T dependence
+    '''
+    return l0 + l1 * T + l2 * T * np.log(T) + l3 * T**2 + l4 / T + l5 * T**3

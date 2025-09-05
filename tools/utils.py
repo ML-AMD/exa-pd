@@ -1,8 +1,9 @@
 import numpy as np
 import os
 
+
 def read_lmp_data(data_in, read_nab=False, read_pos=False):
-    ''' 
+    '''
     data_in: lammps input data file to be read.
     if read_nab: output the number of atoms in each type [na, nb, ...];
     elif read_pos: output pos containing cartesian coordinates of atoms;
@@ -27,16 +28,16 @@ def read_lmp_data(data_in, read_nab=False, read_pos=False):
                 if read_nab:
                     nab = np.zeros(ntyp, dtype=int)
                 if read_pos:
-                    pos = np.zeros((natom,3))
+                    pos = np.zeros((natom, 3))
                 count = 0
                 continue
             if reading_atoms and line and count < natom:
                 fields = line.split()
                 if read_nab:
                     type_id = int(fields[1])  # For 'atomic' style
-                    nab[type_id-1] += 1 
+                    nab[type_id - 1] += 1
                 if read_pos:
-                    pos[count,:] = [float(value) for value in fields[2:5]]
+                    pos[count, :] = [float(value) for value in fields[2:5]]
                 count += 1
     if read_nab and read_pos:
         return natom, ntyp, nab, pos
@@ -86,6 +87,7 @@ def get_lammps_barostat(data_in, eps=1e-3):
     else:
         return "aniso"
 
+
 def create_lammps_supercell(system, infile, outfile, ntarget=500, eps=1.e-3):
     '''
     create a supercell in lammps format from a crystal structure file.
@@ -108,26 +110,26 @@ def create_lammps_supercell(system, infile, outfile, ntarget=500, eps=1.e-3):
     a, b, c = cell.lengths()
     alpha, beta, gamma = cell.angles()
     barostat = "tri"
-    if abs(alpha-90) < eps and abs(beta-90) < eps and abs(gamma-90) < eps:
-        if abs(a-b) < eps and abs(a-c) < eps and abs(b-c) < eps:
+    if abs(alpha - 90) < eps and abs(beta - 90) < eps and abs(gamma - 90) < eps:
+        if abs(a - b) < eps and abs(a - c) < eps and abs(b - c) < eps:
             barostat = "iso"
-        elif abs(a-b) < eps:
+        elif abs(a - b) < eps:
             barostat = "couple xy"
-        elif abs(a-c) < eps:
+        elif abs(a - c) < eps:
             barostat = "couple xz"
-        elif abs(b-c) < eps:
+        elif abs(b - c) < eps:
             barostat = "couple yz"
         else:
             barostat = "aniso"
-    elif abs(a-b) < eps and abs(alpha-90) < eps \
-            and abs(beta-90) < eps and abs(gamma-120) < eps: # hexagonal cell
-        structure = make_supercell(structure, [[1,-1,0],[1,1,0],[0,0,1]])
+    elif abs(a - b) < eps and abs(alpha - 90) < eps \
+            and abs(beta - 90) < eps and abs(gamma - 120) < eps:  # hexagonal cell
+        structure = make_supercell(structure, [[1, -1, 0], [1, 1, 0], [0, 0, 1]])
         cell = structure.get_cell()
         a, b, c = cell.lengths()
         barostat = "couple xy"
-    elif abs(a-b) < eps and abs(alpha-90) < eps \
-            and abs(beta-90) < eps and abs(gamma-60) < eps: # hexagonal cell
-        structure = make_supercell(structure, [[1,1,0],[-1,1,0],[0,0,1]])
+    elif abs(a - b) < eps and abs(alpha - 90) < eps \
+            and abs(beta - 90) < eps and abs(gamma - 60) < eps:  # hexagonal cell
+        structure = make_supercell(structure, [[1, 1, 0], [-1, 1, 0], [0, 0, 1]])
         cell = structure.get_cell()
         a, b, c = cell.lengths()
         barostat = "couple xy"
@@ -135,15 +137,15 @@ def create_lammps_supercell(system, infile, outfile, ntarget=500, eps=1.e-3):
 
     # generate supercell
     rho = len(structure) / structure.get_volume()
-    boxsize = (ntarget/rho) ** (1/3)
-    na = round(boxsize/a)
-    nb = round(boxsize/b)
-    nc = round(boxsize/c)
-    supercell = structure * (na,nb,nc)
+    boxsize = (ntarget / rho) ** (1 / 3)
+    na = round(boxsize / a)
+    nb = round(boxsize / b)
+    nc = round(boxsize / c)
+    supercell = structure * (na, nb, nc)
 
     # write to lammps file
     name = infile.split('/')[-1].split('.')[0]
-    #write_lammps_data(outfile, supercell, atom_style="atomic")
+    # write_lammps_data(outfile, supercell, atom_style="atomic")
     types = supercell.get_chemical_symbols()
     frac_coords = supercell.get_scaled_positions()
     cell = supercell.get_cell()
@@ -151,7 +153,7 @@ def create_lammps_supercell(system, infile, outfile, ntarget=500, eps=1.e-3):
     alpha, beta, gamma = cell.angles()
     try:
         f = open(outfile, "wt")
-    except:
+    except BaseException:
         print(f"cannot open {outfile} to write!")
         raise
     f.write(f"generated from {infile}\n")
@@ -160,14 +162,14 @@ def create_lammps_supercell(system, infile, outfile, ntarget=500, eps=1.e-3):
     f.write(f"{len(system)} atom types\n")
     f.write("\n")
 
-    if abs(alpha-90) < eps and abs(beta-90) < eps and abs(gamma-90) < eps:
+    if abs(alpha - 90) < eps and abs(beta - 90) < eps and abs(gamma - 90) < eps:
         lx, ly, lz = a, b, c
         xy = xz = yz = 0
         f.write(f"0.0      {lx:.6f} xlo xhi\n")
         f.write(f"0.0      {ly:.6f} ylo yhi\n")
         f.write(f"0.0      {lz:.6f} zlo zhi\n")
-    else: # triclinic cell
-        lx,ly,lz,xy,xz,yz = create_triclinic_box(a,b,c,alpha,beta,gamma) 
+    else:  # triclinic cell
+        lx, ly, lz, xy, xz, yz = create_triclinic_box(a, b, c, alpha, beta, gamma)
         f.write(f"0.0      {lx:.6f} xlo xhi\n")
         f.write(f"0.0      {ly:.6f} ylo yhi\n")
         f.write(f"0.0      {lz:.6f} zlo zhi\n")
@@ -187,7 +189,8 @@ def create_lammps_supercell(system, infile, outfile, ntarget=500, eps=1.e-3):
     f.close()
     return barostat
 
-def create_triclinic_box(a,b,c,alpha,beta,gamma, radians=False):
+
+def create_triclinic_box(a, b, c, alpha, beta, gamma, radians=False):
     '''
     convert conventional lattice parameters to box parameters for lammps.
     alpha, beta, gamma are in units of degrees by default
@@ -208,12 +211,13 @@ def create_triclinic_box(a,b,c,alpha,beta,gamma, radians=False):
     lx = a
     ly = b * sin_gamma
     lz = c * np.sqrt(1 - cos_alpha**2 - cos_beta**2 - cos_gamma**2 +
-                      2 * cos_alpha * cos_beta * cos_gamma) / sin_gamma
+                     2 * cos_alpha * cos_beta * cos_gamma) / sin_gamma
     xy = b * cos_gamma
     xz = c * cos_beta
     yz = c * (cos_alpha - cos_beta * cos_gamma) / sin_gamma
 
-    return lx,ly,lz,xy,xz,yz
+    return lx, ly, lz, xy, xz, yz
+
 
 def create_tdb_header_nonsol(name, system, nab):
     '''
@@ -225,7 +229,7 @@ def create_tdb_header_nonsol(name, system, nab):
     ntyp = len(system)
     natom = sum(nab)
     tdb = ''
-    comp = {} # composition of the phase
+    comp = {}  # composition of the phase
     for i in range(ntyp):
         if nab[i] > 0:
             comp[system[i]] = nab[i] / natom
@@ -242,6 +246,7 @@ def create_tdb_header_nonsol(name, system, nab):
         tdb += f"{el}:"
     tdb = tdb[:-1] + ";0) "
     return tdb
+
 
 def create_tdb_header_binsol(name, el1, el2):
     '''

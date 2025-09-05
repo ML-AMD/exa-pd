@@ -7,6 +7,7 @@ CONFIG_REGISTRY = {
     "perlmutter_single_alloc": "parsl_configs.perlmutter_single_allocation.PerlmutterConfig"
 }
 
+
 def load_parsl_config(run_config: dict):
     config_name = run_config["parsl_config"]
     if config_name not in CONFIG_REGISTRY:

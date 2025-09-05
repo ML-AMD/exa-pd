@@ -1,6 +1,7 @@
 import parsl
 from parsl import python_app, bash_app
 
+
 @bash_app(executors=["gpu"])
 def gpu_lammps(directory, script, lmp_exe,
                dep_future=None, depend=None,
@@ -13,8 +14,8 @@ def gpu_lammps(directory, script, lmp_exe,
     return f"""\
     set -e
     cd "{directory}"
-    echo "Running command: {lmp_exe} -sf gpu -pk gpu 1 -in {script} {run_para} > lmp.out"
-    {lmp_exe} -sf gpu -pk gpu 1 -in "{script}" {run_para} > lmp.out && touch DONE
+    echo "Running command: {lmp_exe} -in {script} {run_para} > lmp.out"
+    {lmp_exe} -in "{script}" {run_para} > lmp.out && touch DONE
     """
 
 
