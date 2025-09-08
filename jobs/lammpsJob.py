@@ -13,10 +13,12 @@ class lammpsJob:
                  scriptFile=None,     # lammps input script file
                  arch="gpu",          # whether job supports gpu acceleration
                  depend=None,         # whether job depends on other jobs
+                 priority=1,          # 0: pre_job; 1: reg_job; 2: dep_job
                  ):
         self._dir = directory
         self._arch = arch
         self._depend = depend
+        self._priority=priority
         if not os.path.isdir(directory):
             try:
                 os.mkdir(directory)

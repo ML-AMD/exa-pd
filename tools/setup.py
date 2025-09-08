@@ -160,7 +160,9 @@ def solidJobs(general, solid):
         sol_pre = tramp(data_in, Tlist[:1], f"{phdir}/tramp",
                         barostat=barostat, mode=mode)
         res = sol_pre.setup(general, boxdims=True, msd=True)
-        sol_jobs += sol_pre.get_joblist()
+        for job in sol_pre.get_joblist():
+            job._priority = 0 # set to highest priority
+            sol_jobs.append(job)
         # set up other T-ramping jobs
         sol_tramp = tramp(data_in, Tlist[1:], f"{phdir}/tramp",
                           barostat=barostat, mode=mode)

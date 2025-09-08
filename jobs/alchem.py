@@ -58,12 +58,12 @@ class alchem(lammpsJobGroup):
             elif self._mode == "restart":
                 if not os.path.isdir(jobdir):
                     raise Exception(f"Error: {jobdir} does not exist for restart job!")
-                if os.path.exists(f"{jobdir}/done"):
+                if os.path.exists(f"{jobdir}/DONE"):
                     continue
                 if not os.path.exists(scriptFile):
                     raise Exception(f"Error: lmp script {scriptFile} does not exist for restart job!")
                 job = lammpsJob(directory=jobdir,
-                                scriptFile=scriptFile)
+                                scriptFile=scriptFile, arch="cpu")
                 self._jobList.append(job)
         return 0
 
@@ -148,8 +148,8 @@ class alchem(lammpsJobGroup):
             jobdir = f"{self._dir}/{ilbd}"
             if not os.path.isdir(jobdir):
                 raise Exception(f"Error: {jobdir} does not exist for post processing!")
-            # if not os.path.exists(f"{jobdir}/done"):
-            #    raise Exception(f"Error: job is not done in {jobdir} for post processing!")
+            # if not os.path.exists(f"{jobdir}/DONE"):
+            #    raise Exception(f"Error: job is not DONE in {jobdir} for post processing!")
             job = lammpsJob(directory=jobdir)
             [U0, U1] = job.sample(varList=["c_U0", "c_U1"],
                                   logfile="log.lammps")

@@ -53,7 +53,7 @@ class tramp(lammpsJobGroup):
             elif self._mode == "restart":
                 if not os.path.isdir(Tdir):
                     raise Exception(f"Error: {Tdir} does not exist for restart job!")
-                if os.path.exists(f"{Tdir}/done"):
+                if os.path.exists(f"{Tdir}/DONE"):
                     continue
                 if not os.path.exists(scriptFile):
                     raise Exception(f"Error: lmp script {scriptFile} does not exist for restart job!")
@@ -129,8 +129,8 @@ class tramp(lammpsJobGroup):
             Tdir = f"{self._dir}/T{T:g}"
             if not os.path.isdir(Tdir):
                 raise Exception(f"Error: {Tdir} does not exist for post processing!")
-            # if not os.path.exists(f"{Tdir}/done"):
-            #    raise Exception("Error: job is not done in {Tdir} for post processing!")
+            # if not os.path.exists(f"{Tdir}/DONE"):
+            #    raise Exception("Error: job is not DONE in {Tdir} for post processing!")
             job = lammpsJob(directory=Tdir)
             [T, H] = job.sample(varList=["Temp", "Enthalpy"],
                                 logfile="log.lammps")
