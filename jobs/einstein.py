@@ -45,19 +45,21 @@ class einstein(lammpsJobGroup):
             scriptFile = f"{jobdir}/lmp.in"
             if self._mode == "scratch":
                 job = lammpsJob(directory=jobdir,
-                                scriptFile=scriptFile, arch="cpu", 
+                                scriptFile=scriptFile, arch="cpu",
                                 depend=depend, priority=2)
                 self.write_script(job._script, general, lbd, barostat)
                 self._jobList.append(job)
             elif self._mode == "restart":
                 if not os.path.isdir(jobdir):
-                    raise Exception(f"Error: {jobdir} does not exist for restart job!")
+                    raise Exception(
+                        f"Error: {jobdir} does not exist for restart job!")
                 if os.path.exists(f"{jobdir}/DONE"):
                     continue
                 if not os.path.exists(scriptFile):
-                    raise Exception(f"Error: lmp script {scriptFile} does not exist for restart job!")
+                    raise Exception(
+                        f"Error: lmp script {scriptFile} does not exist for restart job!")
                 job = lammpsJob(directory=jobdir,
-                                scriptFile=scriptFile, arch="cpu", 
+                                scriptFile=scriptFile, arch="cpu",
                                 depend=depend, priority=2)
                 self._jobList.append(job)
 
@@ -72,12 +74,15 @@ class einstein(lammpsJobGroup):
         f.write("\n")
         f.write(f"read_data       {self._datain}\n")
         if barostat == "tri":
-            f.write("change_box      all x final ${fxlo} ${fxhi} y final ${fylo} ${fyhi} z final ${fzlo} ${fzhi} xy final ${fxy} xz final ${fxz} yz final ${fyz} remap units box\n")
+            f.write(
+                "change_box      all x final ${fxlo} ${fxhi} y final ${fylo} ${fyhi} z final ${fzlo} ${fzhi} xy final ${fxy} xz final ${fxz} yz final ${fyz} remap units box\n")
         else:
-            f.write("change_box      all x final ${fxlo} ${fxhi} y final ${fylo} ${fyhi} z final ${fzlo} ${fzhi} remap units box\n")
+            f.write(
+                "change_box      all x final ${fxlo} ${fxhi} y final ${fylo} ${fyhi} z final ${fzlo} ${fzhi} remap units box\n")
         f.write("\n")
         rcut = 2.5 if general.units == "lj" else 7.5
-        f.write(hybridPair(lammpsPair(f"zero {rcut}", "* *"), general.pair, lbd))
+        f.write(hybridPair(lammpsPair(
+            f"zero {rcut}", "* *"), general.pair, lbd))
         f.write(f"compute         U0 all pair {general.pair._name}\n")
         if general.neighbor is not None:
             f.write(f"neighbor        {general.neighbor}\n")
@@ -90,7 +95,8 @@ class einstein(lammpsJobGroup):
             else:
                 f.write(f"mass            * {general.mass}\n")
         f.write("\n")
-        f.write(f"velocity        all create {self._T:g} {np.random.randint(1000000)} rot yes dist gaussian\n")
+        f.write(
+            f"velocity        all create {self._T:g} {np.random.randint(1000000)} rot yes dist gaussian\n")
         if general.timestep is not None:
             f.write(f"timestep        {general.timestep}\n")
         f.write("\n")
@@ -101,7 +107,8 @@ class einstein(lammpsJobGroup):
         f.write("minimize        1e-6 1e-8 5000 50000\n")
         f.write("write_restart   restart.equil\n")
         # set up Langevin thermostat
-        f.write(f"fix             2 all langevin {self._T} {self._T} $(100*dt) {np.random.randint(1000000)} zero yes\n")
+        f.write(
+            f"fix             2 all langevin {self._T} {self._T} $(100*dt) {np.random.randint(1000000)} zero yes\n")
         f.write("\n")
         # set spring constants = 3*kb/msd
         if general.units == "lj":
@@ -114,7 +121,8 @@ class einstein(lammpsJobGroup):
             if self._nab[i] > 0:
                 f.write(f"variable        k{i+1} equal v_pref/v_msd{i+1}\n")
                 f.write(f"group           g{i+1} type {i+1}\n")
-                f.write(f"fix             {i+3} g{i+1} spring/self ${{k{i+1}}}\n")
+                f.write(
+                    f"fix             {i+3} g{i+1} spring/self ${{k{i+1}}}\n")
                 f.write(f"fix_modify      {i+3} energy yes\n")
                 var_U1 += f"f_{i+3}/atoms/{1-lbd} + "
         var_U1 = var_U1[:-3] + '\"\n'
@@ -164,7 +172,8 @@ class einstein(lammpsJobGroup):
                 lbd = 0.99
             jobdir = f"{self._dir}/{ilbd}"
             if not os.path.isdir(jobdir):
-                raise Exception(f"Error: {jobdir} does not exist for post processing!")
+                raise Exception(
+                    f"Error: {jobdir} does not exist for post processing!")
             # if not os.path.exists(f"{jobdir}/DONE"):
             #    raise Exception(f"Error: job is not DONE in {jobdir} for post processing!")
             job = lammpsJob(directory=jobdir)
@@ -174,7 +183,8 @@ class einstein(lammpsJobGroup):
         # due to atoms getting too close).
         # perform an extrapolation
         dU = np.asarray(dU)
-        interpolator = scipy.interpolate.PchipInterpolator(dU[1:, 0], dU[1:, 1], extrapolate=True)
+        interpolator = scipy.interpolate.PchipInterpolator(
+            dU[1:, 0], dU[1:, 1], extrapolate=True)
         # interpolator = scipy.interpolate.interp1d(dU[1:,0], dU[1:,1],kind='cubic',fill_value='extrapolate')
         lbd_extra = np.arange(0, 1.001, 0.01)
         dU_extra = interpolator(lbd_extra)

@@ -18,7 +18,7 @@ class lammpsJob:
         self._dir = directory
         self._arch = arch
         self._depend = depend
-        self._priority=priority
+        self._priority = priority
         if not os.path.isdir(directory):
             try:
                 os.mkdir(directory)
@@ -105,7 +105,8 @@ class lammpsPair:
         self._cmd = "pair_style\t" + pair_style + '\n'
         self._name = values[0]  # name of the pair style
         if len(values) > 1:
-            self._param = ' '.join(values[1:])  # other parameters for the pair style
+            # other parameters for the pair style
+            self._param = ' '.join(values[1:])
         else:
             self._param = ''
         if isinstance(pair_coeff, list):

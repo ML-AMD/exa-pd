@@ -81,9 +81,11 @@ def liquidJobs(general, liquid):
                     print(f"Error: cannot create directory {compdir}!")
                     sys.exit(1)
             else:
-                raise Exception(f"{compdir} does not exist for restarting job!")
+                raise Exception(
+                    f"{compdir} does not exist for restarting job!")
         # set up alchem jobs
-        liq_alchem = alchem(data_in, dlbd, Tmax, f"{compdir}/alchem", mode, ref_pair, n)
+        liq_alchem = alchem(data_in, dlbd, Tmax,
+                            f"{compdir}/alchem", mode, ref_pair, n)
         res = liq_alchem.setup(general)
         liq_jobs += liq_alchem.get_joblist()
         # set up T-ramping jobs
@@ -152,7 +154,8 @@ def solidJobs(general, solid):
         else:
             data_in = f"{phdir}/{name}.lammps"
             try:
-                barostat = create_lammps_supercell(general.system, ph_file, data_in)
+                barostat = create_lammps_supercell(
+                    general.system, ph_file, data_in)
             except BaseException:
                 print(f"ASE couldn't generate the lammps input for {ph_file}!")
                 raise
@@ -161,7 +164,7 @@ def solidJobs(general, solid):
                         barostat=barostat, mode=mode)
         res = sol_pre.setup(general, boxdims=True, msd=True)
         for job in sol_pre.get_joblist():
-            job._priority = 0 # set to highest priority
+            job._priority = 0  # set to highest priority
             sol_jobs.append(job)
         # set up other T-ramping jobs
         sol_tramp = tramp(data_in, Tlist[1:], f"{phdir}/tramp",
