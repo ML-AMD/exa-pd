@@ -21,6 +21,9 @@ class einstein(lammpsJobGroup):
         super().__init__(directory)
         self._datain = data_in
         self._dlbd = dlbd
+        self._lbdList = np.arange(0, 1 + 0.1 * dlbd, dlbd)
+        self._lbdList[0] = 0.01
+        self._lbdList[-1] = 0.99
         self._T = T
         natom, ntyp, nab = read_lmp_data(self._datain, read_nab=True)
         self._natom = natom
@@ -35,33 +38,15 @@ class einstein(lammpsJobGroup):
         natom = self._natom
         nlbd = int(1 / self._dlbd) + 1
         dU = []  # only used in post processing
-        for ilbd in range(nlbd):
-            lbd = self._dlbd * ilbd
-            if lbd < 0.01:
-                lbd = 0.01
-            elif lbd > 0.99:
-                lbd = 0.99
+        for ilbd, lbd in enumerate(self._lbdList):
             jobdir = f"{self._dir}/{ilbd}"
             scriptFile = f"{jobdir}/lmp.in"
-            if self._mode == "scratch":
-                job = lammpsJob(directory=jobdir,
-                                scriptFile=scriptFile, arch="cpu",
-                                depend=depend, priority=2)
+            job = lammpsJob(directory=jobdir,
+                            scriptFile=scriptFile, arch="cpu",
+                            depend=depend, priority=2)
+            if not os.path.exists(scriptFile):
                 self.write_script(job._script, general, lbd, barostat)
-                self._jobList.append(job)
-            elif self._mode == "restart":
-                if not os.path.isdir(jobdir):
-                    raise Exception(
-                        f"Error: {jobdir} does not exist for restart job!")
-                if os.path.exists(f"{jobdir}/DONE"):
-                    continue
-                if not os.path.exists(scriptFile):
-                    raise Exception(
-                        f"Error: lmp script {scriptFile} does not exist for restart job!")
-                job = lammpsJob(directory=jobdir,
-                                scriptFile=scriptFile, arch="cpu",
-                                depend=depend, priority=2)
-                self._jobList.append(job)
+            self._jobList.append(job)
 
     def write_script(self, scriptFile, general, lbd, barostat):
         f = open(scriptFile, 'wt')
@@ -164,12 +149,7 @@ class einstein(lammpsJobGroup):
                 idx += 1
         # excess free energy from TI
         dU = []
-        for ilbd in range(nlbd):
-            lbd = self._dlbd * ilbd
-            if lbd < 0.01:
-                lbd = 0.01
-            elif lbd > 0.99:
-                lbd = 0.99
+        for ilbd, lbd in enumerate(self._lbdList):
             jobdir = f"{self._dir}/{ilbd}"
             if not os.path.isdir(jobdir):
                 raise Exception(

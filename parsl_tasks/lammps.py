@@ -14,10 +14,14 @@ def gpu_lammps(directory, script, lmp_exe,
     return f"""\
     set -e
     cd "{directory}"
-    echo "Running command: {lmp_exe} -in {script} {run_para} > lmp.out"
-    {lmp_exe} -in "{script}" {run_para} > lmp.out && touch DONE
-    """
 
+    if [ -f DONE ]; then
+        echo "DONE file exists, skipping LAMMPS run."
+    else
+        echo "Running command: {lmp_exe} -in {script} {run_para} > lmp.out"
+        {lmp_exe} -in "{script}" {run_para} > lmp.out && touch DONE
+    fi
+    """
 
 @bash_app(executors=["cpu"])
 def cpu_lammps(directory, script, lmp_exe, ncpu=32,
@@ -31,9 +35,12 @@ def cpu_lammps(directory, script, lmp_exe, ncpu=32,
     return f"""\
     set -e
     cd "{directory}"
-    echo "Running command: srun -N 1 -n {ncpu} -c 2 --cpu-bind=cores --exact \\
-            [O
-    shifter --image=nersc/lammps_all:23.08 {lmp_exe} -in {script} {run_para} > lmp.out"
-    srun -N 1 -n {ncpu} -c 2 --cpu-bind=cores --exact \\
-    shifter --image=nersc/lammps_all:23.08 {lmp_exe} -in "{script}" {run_para} > lmp.out && touch DONE
+    if [ -f DONE ]; then
+        echo "DONE file exists, skipping LAMMPS run."
+    else
+        echo "Running command: srun -N 1 -n {ncpu} -c 2 --cpu-bind=cores --exact \\
+        shifter --image=nersc/lammps_all:23.08 {lmp_exe} -in {script} {run_para} > lmp.out"
+        srun -N 1 -n {ncpu} -c 2 --cpu-bind=cores --exact \\
+        shifter --image=nersc/lammps_all:23.08 {lmp_exe} -in "{script}" {run_para} > lmp.out && touch DONE
+    fi
     """

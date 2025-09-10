@@ -41,25 +41,14 @@ class tramp(lammpsJobGroup):
         if msd=Ture, calculate msd for each elements.
         '''
         natom = self._natom
-        H_of_T = []  # only used in post processing
         for T in self._Tlist:
             Tdir = f"{self._dir}/T{T:g}"
             scriptFile = f"{Tdir}/lmp.in"
-            if self._mode == "scratch":
-                job = lammpsJob(directory=Tdir,
-                                scriptFile=scriptFile)
+            job = lammpsJob(directory=Tdir,
+                            scriptFile=scriptFile)
+            if not os.path.exists(scriptFile):
                 self.write_script(job._script, general, T, boxdims, msd)
-                self._jobList.append(job)
-            elif self._mode == "restart":
-                if not os.path.isdir(Tdir):
-                    raise Exception(f"Error: {Tdir} does not exist for restart job!")
-                if os.path.exists(f"{Tdir}/DONE"):
-                    continue
-                if not os.path.exists(scriptFile):
-                    raise Exception(f"Error: lmp script {scriptFile} does not exist for restart job!")
-                job = lammpsJob(directory=Tdir, scriptFile=scriptFile)
-                self._jobList.append(job)
-        return 0
+            self._jobList.append(job)
 
     def write_script(self, scriptFile, general, T, boxdims, msd):
         f = open(scriptFile, 'wt')

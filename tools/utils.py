@@ -270,3 +270,19 @@ def create_tdb_header_binsol(name, el1, el2):
         rk[i] = f"   PARAMETER L({name},{el1},{el2};{i})"
 
     return phase, end, rk
+
+
+def merge_arrays(arr1, arr2, tolerance=0.001):
+    # Combine the arrays
+    combined = np.concatenate((arr1, arr2))
+    
+    # Sort the combined array
+    combined = np.sort(combined)
+    
+    # Remove duplicates within tolerance
+    result = [combined[0]]
+    for i in range(1, len(combined)):
+        if abs(combined[i] - result[-1]) > tolerance:
+            result.append(combined[i])
+            
+    return np.array(result)

@@ -24,6 +24,7 @@ class alchem(lammpsJobGroup):
         super().__init__(directory)
         self._datain = data_in
         self._dlbd = dlbd
+        self._lbdList = np.arange(0, 1 + 0.1 * dlbd, dlbd)
         self._T = T
         self._mode = mode
         self._nab = nab
@@ -44,28 +45,15 @@ class alchem(lammpsJobGroup):
         set up TI jobs for alchemical path
         '''
         natom = self._natom
-        nlbd = int(1 / self._dlbd) + 1
-        dU = []  # only used in post processing
-        for ilbd in range(nlbd):
-            lbd = self._dlbd * ilbd
+        for ilbd, lbd in enumerate(self._lbdList):
             jobdir = f"{self._dir}/{ilbd}"
             scriptFile = f"{jobdir}/lmp.in"
-            if self._mode == "scratch":
-                job = lammpsJob(directory=jobdir,
-                                scriptFile=scriptFile, arch="cpu")
+            job = lammpsJob(directory=jobdir,
+                            scriptFile=scriptFile, arch="cpu")
+            if not os.path.exists(job._script):
                 self.write_script(job._script, general, lbd)
-                self._jobList.append(job)
-            elif self._mode == "restart":
-                if not os.path.isdir(jobdir):
-                    raise Exception(f"Error: {jobdir} does not exist for restart job!")
-                if os.path.exists(f"{jobdir}/DONE"):
-                    continue
-                if not os.path.exists(scriptFile):
-                    raise Exception(f"Error: lmp script {scriptFile} does not exist for restart job!")
-                job = lammpsJob(directory=jobdir,
-                                scriptFile=scriptFile, arch="cpu")
-                self._jobList.append(job)
-        return 0
+            self._jobList.append(job)
+
 
     def write_script(self, scriptFile, general, lbd):
         natom = self._natom
@@ -140,11 +128,9 @@ class alchem(lammpsJobGroup):
         f.close()
 
     def process(self, general):
-        nlbd = int(1 / self._dlbd) + 1
         # contribution from thermodynamic integration
         dU = []
-        for ilbd in range(nlbd):
-            lbd = self._dlbd * ilbd
+        for ilbd, lbd in self._lbdList:
             jobdir = f"{self._dir}/{ilbd}"
             if not os.path.isdir(jobdir):
                 raise Exception(f"Error: {jobdir} does not exist for post processing!")

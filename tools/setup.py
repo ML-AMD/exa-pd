@@ -2,6 +2,8 @@ from jobs.lammpsJob import *
 from jobs.alchem import *
 from jobs.einstein import *
 from jobs.tramp import *
+from tools.logging_config import exapd_logger
+from tools.utils import merge_arrays
 import os
 import sys
 
@@ -16,23 +18,19 @@ def liquidJobs(general, liquid):
     # read input
     try:
         mode = liquid["mode"]
-    except BaseException:
+    except KeyError:
         mode = "scratch"
     if mode not in ["scratch", "restart"]:
         return []  # do nothing
     liq_dir = f"{general.proj_dir}/liquid"
     if not os.path.isdir(liq_dir):
-        if mode == "scratch":
-            try:
-                os.mkdir(liq_dir)
-            except BaseException:
-                print(f"Error: cannnot create directory {liq_dir}")
-                sys.exit(1)
-        else:
-            raise Exception(f"{liq_dir} does not exist for restarting job!")
+        try:
+            os.mkdir(liq_dir)
+        except Exception as e:
+            exapd_logger.critical(f"{e}: Cannnot create directory {liq_dir}.")
     data_in = os.path.abspath(liquid["data_in"])
     if not os.path.exists(data_in):
-        raise Exception(f"Error file {data_in} doesn't exist!")
+        exapd_logger.critical(f"File {data_in} does not exist.")
 
     comp0 = liquid["initial_comp"]
     comp1 = liquid["final_comp"]
@@ -41,22 +39,33 @@ def liquidJobs(general, liquid):
     comp1 = np.array(comp1) / sum(comp1)
     try:
         ncomp = liquid["ncomp"]
-    except BaseException:
+    except KeyError:
         ncomp = 10
     try:
         ref_pair_style = liquid["ref_pair_style"]
         ref_pair_coeff = liquid["ref_pair_coeff"]
         ref_pair = lammpsPair(ref_pair_style, ref_pair_coeff)
-    except BaseException:
+    except KeyError:
         ref_pair = None
     try:
         dlbd = liquid["dlbd"]
-    except BaseException:
+    except KeyError:
         dlbd = 0.05
-    Tmin = liquid["Tmin"]
-    Tmax = liquid["Tmax"]
-    dT = liquid["dT"]
-    Tlist = np.arange(Tmin, Tmax + 0.1 * dT, dT)
+    try: 
+        Tlist = np.sort(liquid["Tlist"])
+    except KeyError:
+        Tlist = None
+    try:
+        Tmin = liquid["Tmin"]
+        Tmax = liquid["Tmax"]
+        dT = liquid["dT"]
+        if Tlist is None:
+            Tlist = np.arange(Tmin, Tmax + 0.1 * dT, dT)
+        else:
+            Tlist = merge_arrays(Tlist, np.arange(Tmin, Tmax + 0.1 * dT, dT))
+    except KeyError:
+        if Tlist is None:
+            exapd_logger.critical("Tlist cannot be created for liquid.")
     liq_jobs = []
     natom, ntyp = read_lmp_data(data_in)
     n0 = natom * comp0
@@ -74,15 +83,10 @@ def liquidJobs(general, liquid):
                 n[idx[0]] += (natom - sum(n))
         compdir = f"{liq_dir}/comp{icomp}"
         if not os.path.isdir(compdir):
-            if mode == "scratch":
-                try:
-                    os.mkdir(compdir)
-                except BaseException:
-                    print(f"Error: cannot create directory {compdir}!")
-                    sys.exit(1)
-            else:
-                raise Exception(
-                    f"{compdir} does not exist for restarting job!")
+            try:
+                os.mkdir(compdir)
+            except Exception as e:
+                exapd_logger.critical(f"{e}: Cannot create directory {compdir}!")
         # set up alchem jobs
         liq_alchem = alchem(data_in, dlbd, Tmax,
                             f"{compdir}/alchem", mode, ref_pair, n)
@@ -105,48 +109,51 @@ def solidJobs(general, solid):
     # read input
     try:
         mode = solid["mode"]
-    except BaseException:
+    except KeyError:
         mode = "scratch"
     if mode not in ["scratch", "restart"]:
         return []  # do nothing
     sol_dir = f"{general.proj_dir}/solid"
     if not os.path.isdir(sol_dir):
-        if mode == "scratch":
-            try:
-                os.mkdir(sol_dir)
-            except BaseException:
-                print(f"Error: cannnot create directory {sol_dir}")
-                sys.exit(1)
-        else:
-            raise Exception(f"{sol_dir} does not exist for restarting job!")
+        try:
+            os.mkdir(sol_dir)
+        except Exception as e:
+            exapd_logger.critical(f"{e}: Cannnot create directory {sol_dir}")
 
     phases = solid["phases"]
     try:
         dlbd = solid["dlbd"]
-    except BaseException:
+    except KeyError:
         dlbd = 0.05
-    Tmin = solid["Tmin"]
-    Tmax = solid["Tmax"]
-    dT = solid["dT"]
-    Tlist = np.arange(Tmin, Tmax + 0.1 * dT, dT)
+    try: 
+        Tlist = np.sort(solid["Tlist"])
+    except KeyError:
+        Tlist = None
+    try:
+        Tmin = solid["Tmin"]
+        Tmax = solid["Tmax"]
+        dT = solid["dT"]
+        if Tlist is None:
+            Tlist = np.arange(Tmin, Tmax + 0.1 * dT, dT)
+        else:
+            Tlist = merge_arrays(Tlist, np.arange(Tmin, Tmax + 0.1 * dT, dT))
+    except KeyError:
+        if Tlist is None:
+            exapd_logger.critical("Tlist cannot be created for solid.")
     sol_jobs = []
     for ph in phases:
         # supports lammps format or other formats that can be converted
         # to lammps format by ASE.
         ph_file = os.path.abspath(ph)
         if not os.path.exists(ph_file):
-            raise Exception(f"Error file {ph_file} doesn't exist")
+            exapd_logger.critical(f"File {ph_file} does not exist.")
         name, form = ph_file.split('/')[-1].split('.')
         phdir = f"{sol_dir}/{name}"
         if not os.path.isdir(phdir):
-            if mode == "scratch":
-                try:
-                    os.mkdir(phdir)
-                except BaseException:
-                    print(f"Error: cannot create directory {phdir}!")
-                    sys.exit(1)
-            else:
-                raise Exception(f"{phdir} does not exist for restarting job!")
+            try:
+                os.mkdir(phdir)
+            except Exception as e:
+                exapd_logger.critical(f"{e}: Cannot create directory {phdir}.")
         # set up Frankel-Ladd jobs
         if form == "lammps":
             data_in = ph_file
@@ -156,9 +163,8 @@ def solidJobs(general, solid):
             try:
                 barostat = create_lammps_supercell(
                     general.system, ph_file, data_in)
-            except BaseException:
-                print(f"ASE couldn't generate the lammps input for {ph_file}!")
-                raise
+            except Exception as e:
+                exapd_logger.critical(f"{e}: ASE could not generate the lammps input for {ph_file}.")
         # set up pre jobs
         sol_pre = tramp(data_in, Tlist[:1], f"{phdir}/tramp",
                         barostat=barostat, mode=mode)
