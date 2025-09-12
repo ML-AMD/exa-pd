@@ -1,10 +1,10 @@
 # exa-pd: Exascale Accelerated Phase Diagram construction
-Exa-pd is a highly parallelizable workflow for constructing multi-element phase diagrams (PDs). It uses standard sampling techniques—molecular dynamics (MD) and Monte Carlo (MC)—as implemented in the LAMMPS package, to simultaneously sample multiple phases on a fine temperature–composition mesh for free-energy calculations. The workflow uses [Parsl](https://parsl-project.org) as a global controller to manage the MD/MC jobs to achieve massive parallelization with almost ideal scalability. The resulting free energies of both liquid and solid phases (including solid solutions) are then fed to CALPHAD modeling using the PYCALPHAD package for the construction of a multi-element PDs.
+Exa-pd is a highly parallelizable workflow for constructing multi-element phase diagrams (PDs). It uses standard sampling techniques—molecular dynamics (MD) and Monte Carlo (MC)—as implemented in the LAMMPS package, to simultaneously sample multiple phases on a fine temperature–composition mesh for free-energy calculations. The workflow uses [Parsl](https://parsl-project.org) as a global controller to manage the MD/MC jobs to achieve massive parallelization with almost ideal scalability. The resulting free energies of both liquid and solid phases (including solid solutions) are then fed to CALPHAD modeling using the PYCALPHAD package for the construction of a multi-element PD.
 
 ## Table of Contents
 - [Prerequisites](#prerequisites)
-- [Usage](#usage)
 - [Register a new Parsl configuration](#register-parsl-config)
+- [Usage](#usage)
 - [Examples](#examples)
 
 ## Prerequisites
@@ -25,6 +25,27 @@ Additionally:
 - Ensure you have a working [LAMMPS](https://www.lammps.org/) installation.
 - Ensure you have prepared the crystal structures for solid phases (line compounds) for free energy calculations in the format of Crystallographic Information File (CIF) or Vienna Ab initio Simulation Package (VASP). 
 - Create a json file that specifies all the input parameters for exa-PD. See for example [configs/input.json](configs/input.json).
+
+## Registering a new Parsl configuration
+We currently support the automated workflows on NERSC's Perlmutter. If you would like to run on a different computing system, you must add your own Parsl configuration following these steps:
+
+1. Create a new file in the `parsl_configs` directory, similar to the one in [parsl_configs/perlmutter.py](parsl_configs/perlmutter.py)
+2. Add a configuration class with a unique name `<my_parsl_config_name>` 
+3. Modify Parsl's execution settings. More details can be found in [Parsl's official documentation](https://parsl.readthedocs.io/en/stable/userguide/configuration/execution.html)
+4. Register your configuration class by calling `register_parsl_config()`
+5. Modify your json configuration file accordingly by setting `parsl_config` in the json configuration file to `<my_parsl_config_name>`
+
+## Usage
+- Modify the the json configuration file to indicate all the input parameters
+
+- Run exa-PD with the json file created in the prerequisite step:
+    ```bash
+    python run.py --config <your_config_file>
+    ```
+  
+
+   
+
 
 
   
