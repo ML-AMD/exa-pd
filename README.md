@@ -32,7 +32,7 @@ We currently support the automated workflows on NERSC's Perlmutter. If you would
 1. Create a new file in the `parsl_configs` directory, similar to the one in [parsl_configs/perlmutter.py](parsl_configs/perlmutter.py)
 2. Add a configuration class with a unique name `<my_parsl_config_name>` 
 3. Modify Parsl's execution settings. More details can be found in [Parsl's official documentation](https://parsl.readthedocs.io/en/stable/userguide/configuration/execution.html)
-4. Register your configuration class by calling `register_parsl_config()`
+4. Register your configuration class by including it in `CONFIG_REGISTRY` in `config_registry.py` under `parsl_configs` directory.
 5. Modify your json configuration file accordingly by setting `parsl_config` in the json configuration file to `<my_parsl_config_name>`
 
 ## Usage
@@ -43,7 +43,7 @@ We currently support the automated workflows on NERSC's Perlmutter. If you would
     python run.py --config <your_config_file>
     ```
   
-
+## Examples
    
 
 
