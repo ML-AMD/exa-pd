@@ -15,7 +15,6 @@ class alchem(lammpsJobGroup):
                  dlbd,             # delta_lambda for thermodynamical integration
                  T,                # temperature
                  directory,        # path to group directory
-                 mode="scratch",   # scratch, restart, or process
                  ref_pair=None,    # reference pair style/coeff for TI
                  nab=None,         # number of atoms of each type, [na, nb, ...],
                  # if given, change comp in data_in accordingly
@@ -26,7 +25,6 @@ class alchem(lammpsJobGroup):
         self._dlbd = dlbd
         self._lbdList = np.arange(0, 1 + 0.1 * dlbd, dlbd)
         self._T = T
-        self._mode = mode
         self._nab = nab
         self._barostat = barostat
         self._ref_pair = ref_pair
@@ -40,7 +38,7 @@ class alchem(lammpsJobGroup):
         self._ntyp = ntyp
         self._nab = nab
 
-    def setup(self, general):
+    def setup(self, general, depend):
         '''
         set up TI jobs for alchemical path
         '''
@@ -49,7 +47,7 @@ class alchem(lammpsJobGroup):
             jobdir = f"{self._dir}/{ilbd}"
             scriptFile = f"{jobdir}/lmp.in"
             job = lammpsJob(directory=jobdir,
-                            scriptFile=scriptFile, arch="cpu")
+                            scriptFile=scriptFile, arch="cpu", depend=depend)
             if not os.path.exists(job._script):
                 self.write_script(job._script, general, lbd)
             self._jobList.append(job)
@@ -66,6 +64,7 @@ class alchem(lammpsJobGroup):
                 sigma = 1.5  # angstroms
             pair0 = lammpsPair(f"ufm {5*sigma}", f"* * {kb*self._T*50} {sigma}")  # default p=50
             barostat = "none"  # run nvt
+            
         else:
             pair0 = self._ref_pair
             barostat = self._barostat
@@ -85,6 +84,12 @@ class alchem(lammpsJobGroup):
         f.write("\n")
         if self._resetTypes:
             f.write(reset_types(self._nab, natom))
+        f.write("\n")
+        # rescale the box for nvt if UFM is used as ref
+        if self._ref_pair is None: 
+            f.write("variable        a equal v_vol^(1.0/3.0)\n")
+            f.write("change_box      all x final 0 $a y final 0 $a z final 0 $a remap units box\n") 
+        f.write("\n")
         f.write(hybridPair(pair0, pair1, lbd))
         if pair0._name == pair1._name:
             f.write(f"compute         U0 all pair {pair0._name} 1\n")
@@ -104,12 +109,12 @@ class alchem(lammpsJobGroup):
             else:
                 f.write(f"mass            * {general.mass}\n")
         f.write("\n")
-        f.write(f"velocity      all create {self._T:g} {np.random.randint(1000000)} rot yes dist gaussian\n")
+        f.write(f"velocity        all create {self._T:g} {np.random.randint(1000000)} rot yes dist gaussian\n")
         if general.timestep is not None:
             f.write(f"timestep        {general.timestep}\n")
         f.write("\n")
         f.write(f"thermo          {general.thermo}\n")
-        f.write("thermo_style    custom step temp etotal c_U0 c_U1\n")
+        f.write("thermo_style    custom step temp vol etotal c_U0 c_U1\n")
         f.write("thermo_modify   lost error norm yes\n")
         f.write("\n")
         if barostat == "none":  # run nvt

@@ -18,7 +18,10 @@ class lammpsJob:
         self._dir = directory
         self._arch = arch
         self._depend = depend
-        self._priority = priority
+        if depend:
+            self._priority = 2
+        else:
+            self._priority = priority
         if not os.path.isdir(directory):
             try:
                 os.mkdir(directory)
@@ -223,12 +226,12 @@ def reset_types(nab, natom):
     if sum(nab) != natom or min(nab) < 0:
         raise Exception("Error: Incorrect number of atoms!")
     ntot = nab[0]
-    cmd = f"group         g1 id <= {ntot}\n"
-    cmd += f"set           group g1 type 1\n"
+    cmd = f"group           g1 id <= {ntot}\n"
+    cmd += f"set             group g1 type 1\n"
     for i in range(1, len(nab)):
         if nab[i] > 0:
-            cmd += f"group         g{i+1} id <> {ntot+1} {ntot+nab[i]}\n"
-            cmd += f"set           group g{i+1} type {i+1}\n"
+            cmd += f"group           g{i+1} id <> {ntot+1} {ntot+nab[i]}\n"
+            cmd += f"set             group g{i+1} type {i+1}\n"
             ntot += nab[i]
     return cmd
 

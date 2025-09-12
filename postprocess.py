@@ -59,10 +59,10 @@ def process_liquid(general, liquid, T0, G0, write_file=True):
             raise Exception(f"{compdir} does not exist for post-processing!")
         #  process alchem jobs
         if icomp > 0:
-            liq_alchem = alchem(data_in, dlbd, Tmax, f"{compdir}/alchem", mode="process", nab=n)
+            liq_alchem = alchem(data_in, dlbd, Tmax, f"{compdir}/alchem", nab=n)
             det_G = liq_alchem.process(general)
         # process T-ramping jobs
-        liq_tramp = tramp(data_in, Tlist, f"{compdir}/tramp", mode="process", nab=n)
+        liq_tramp = tramp(data_in, Tlist, f"{compdir}/tramp", nab=n)
         res = liq_tramp.process()
         if general.units == "lj":
             dT = 0.01

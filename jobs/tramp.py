@@ -14,7 +14,6 @@ class tramp(lammpsJobGroup):
                  data_in,          # initial structure file in lammps format
                  Tlist,            # list of temperatures to equilibrate
                  directory,        # path to group directory
-                 mode="scratch",   # scratch, restart or process
                  nab=None,         # number of atoms of each type, [na, nb, ...],
                  # if given, change comp in data_in accordingly
                  barostat="iso",   # barostat for npt, if "none", run nvt
@@ -22,7 +21,6 @@ class tramp(lammpsJobGroup):
         super().__init__(directory)
         self._datain = data_in
         self._Tlist = Tlist
-        self._mode = mode
         self._barostat = barostat
         if nab is not None:
             natom, ntyp = read_lmp_data(self._datain)

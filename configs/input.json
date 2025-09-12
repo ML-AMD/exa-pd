@@ -1,52 +1,47 @@
 {
-        "general" : {
-                "comments" : "AlSm at p=0",
-                "system" : "Al Sm",
-                "mass" : [26.9815, 150.36],
-                "dir" : "./test/",
-                "pressure" : 0.0,
-                "units" : "metal",
-                "pair_style" : "eam/fs",
-                "pair_coeff" : "* * /global/homes/m/moraru/Parsl-Project/exa-pd-configs/input/v4_1_Al3Sm.eam.fs Al Sm"
-        },
-        "run" : {
-                "ngpu" : 4,
-                "ncpu" : 4,
+	"general" : {
+		"comments" : "Al-Sm at with xSm<=0.25",
+		"system" : "Al Sm",
+		"mass" : [26.982, 150.36],
+		"dir" : "./PD",
+		"pair_style" : "eam/fs",
+		"pair_coeff" : "* * /pscratch/sd/f/fzhang/MD/AlSm-PD/v4_1_Al3Sm.eam.fs Al Sm"
+	},
+	"run" : {
+                "ngpu" : 1,
+                "ncpu" : 1,
                 "gpu_account" : "m4802",
                 "cpu_account" : "m4802",
                 "qos" : "premium",
                 "cpu_exe" : "lmp",
-                "gpu_exe" : "/global/cfs/cdirs/m4802/Thrust2/lmp_exe/lmp_gpu_serial",
+                "gpu_exe" : "/global/homes/f/fzhang/install/lammps/src/lmp_gpu_serial -sf gpu -pk gpu 1",
                 "parsl_config" : "perlmutter_single_alloc"
         },
-        "solid" : {
-                "mode" : "scratch",
-                "phases" : [
-                        "/global/homes/m/moraru/Parsl-Project/exa-pd-configs/input/fcc-Al.cif",
-                        "/global/homes/m/moraru/Parsl-Project/exa-pd-configs/input/Al3Sm.cif"
-                ],
-                "Tmin" : 700,
-                "Tmax" : 1500,
-                "dT" : 50
-        },
-        "liquid" : {
-                "mode" : "scratch",
-                "data_in" : "/global/homes/m/moraru/Parsl-Project/exa-pd-configs/input/data.in",
-                "initial_comp" : [1, 0],
-                "final_comp" : [0.75, 0.25],
-                "ncomp" : 2,
-                "ref_pair_style" : "eam/fs",
-                "ref_pair_coeff" : "* * /global/homes/m/moraru/Parsl-Project/exa-pd-configs/input/v4_1_Al3Sm.eam.fs Al Al",
-                "dlbd" : 0.25,
-                "Tmin" : 700,
-                "Tmax" : 1500,
-                "dT" : 50
-        },
-        "sli" : {
-                "mode" : "scratch",
-                "phase" : "fcc-Al",
-                "Tmin" : 700,
-                "Tmax" : 1500,
-                "dT" : 50
-        }
+	"solid" : {
+		"phases" : [
+			"fcc.cif",
+			"Al3Sm.cif"
+		],
+		"Tmin" : 700,
+		"Tmax" : 1500,
+		"dT" : 50
+	},
+	"liquid" : {
+		"data_in" : "./data.in",
+		"initial_comp" : [1, 0],
+		"final_comp" : [0.75, 0.25],
+		"ncomp" : 5,
+		"ref_pair_style" : "eam/fs",
+		"ref_pair_coeff" : "* * /pscratch/sd/f/fzhang/MD/AlSm-PD/v4_1_Al3Sm.eam.fs Al Al",
+		"dlbd" : 0.05,
+		"Tmin" : 700,
+		"Tmax" : 1500,
+		"dT" : 50
+	},
+	"sli" : {
+		"phase" : "fcc",
+		"Tmin" : 1.2,
+		"Tmax" : 1.5,
+		"dT" : 0.05
+	}
 }

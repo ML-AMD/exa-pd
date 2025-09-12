@@ -12,16 +12,8 @@ def liquidJobs(general, liquid):
     '''
     set up TI and T-ramping jobs for liquid, taking input from the general
     and liquid sections from the input JSon file.
-    if liquid["mode"] == "scratch" or "restart", return a list of jobs,
-    otherwise, return an empty list
     '''
     # read input
-    try:
-        mode = liquid["mode"]
-    except KeyError:
-        mode = "scratch"
-    if mode not in ["scratch", "restart"]:
-        return []  # do nothing
     liq_dir = f"{general.proj_dir}/liquid"
     if not os.path.isdir(liq_dir):
         try:
@@ -71,7 +63,7 @@ def liquidJobs(general, liquid):
     n0 = natom * comp0
     n1 = natom * comp1
     dn = (n1 - n0) / ncomp
-    for icomp in range(1, ncomp + 1):
+    for icomp in range(ncomp + 1):
         n = n0 + icomp * dn
         n = n.astype(int)
         # fix possible rounding error
@@ -88,13 +80,22 @@ def liquidJobs(general, liquid):
             except Exception as e:
                 exapd_logger.critical(f"{e}: Cannot create directory {compdir}!")
         # set up alchem jobs
+        if ref_pair is None: # set up depend feature for UFM 
+            pre_job_dir = f"{compdir}/tramp/T{Tlist[-1]:g}"
+            pre_var_names = ["vol"]
+            pre_var_values = ["Volume"]
+            depend = (pre_job_dir, pre_var_names, pre_var_values)
+        else:
+            depend = None
         liq_alchem = alchem(data_in, dlbd, Tmax,
-                            f"{compdir}/alchem", mode, ref_pair, n)
-        res = liq_alchem.setup(general)
+                            f"{compdir}/alchem", ref_pair, n)
+        res = liq_alchem.setup(general, depend)
         liq_jobs += liq_alchem.get_joblist()
         # set up T-ramping jobs
-        liq_tramp = tramp(data_in, Tlist, f"{compdir}/tramp", mode, n)
+        liq_tramp = tramp(data_in, Tlist, f"{compdir}/tramp", n)
         res = liq_tramp.setup(general)
+        if depend:
+            liq_tramp.get_joblist()[-1]._priority = 0
         liq_jobs += liq_tramp.get_joblist()
     return liq_jobs
 
@@ -103,16 +104,8 @@ def solidJobs(general, solid):
     '''
     set up TI and T-ramping jobs for solid, taking input from the general
     and solid sections from the input JSon file.
-    if liquid["mode"] == "scratch" or "restart", return a list of jobs,
-    otherwise, return an empty list
     '''
     # read input
-    try:
-        mode = solid["mode"]
-    except KeyError:
-        mode = "scratch"
-    if mode not in ["scratch", "restart"]:
-        return []  # do nothing
     sol_dir = f"{general.proj_dir}/solid"
     if not os.path.isdir(sol_dir):
         try:
@@ -140,6 +133,10 @@ def solidJobs(general, solid):
     except KeyError:
         if Tlist is None:
             exapd_logger.critical("Tlist cannot be created for solid.")
+    try:
+        ntarget = solid["ntarget"]
+    except KeyError:
+        ntarget = 5000
     sol_jobs = []
     for ph in phases:
         # supports lammps format or other formats that can be converted
@@ -162,19 +159,19 @@ def solidJobs(general, solid):
             data_in = f"{phdir}/{name}.lammps"
             try:
                 barostat = create_lammps_supercell(
-                    general.system, ph_file, data_in)
+                    general.system, ph_file, data_in, ntarget=ntarget)
             except Exception as e:
                 exapd_logger.critical(f"{e}: ASE could not generate the lammps input for {ph_file}.")
         # set up pre jobs
         sol_pre = tramp(data_in, Tlist[:1], f"{phdir}/tramp",
-                        barostat=barostat, mode=mode)
+                        barostat=barostat)
         res = sol_pre.setup(general, boxdims=True, msd=True)
         for job in sol_pre.get_joblist():
             job._priority = 0  # set to highest priority
             sol_jobs.append(job)
         # set up other T-ramping jobs
         sol_tramp = tramp(data_in, Tlist[1:], f"{phdir}/tramp",
-                          barostat=barostat, mode=mode)
+                          barostat=barostat)
         res = sol_tramp.setup(general)
         sol_jobs += sol_tramp.get_joblist()
         # set up einstein jobs
@@ -191,7 +188,7 @@ def solidJobs(general, solid):
                 pre_var_values.append(f"c_c{i+1}[4]")
         depend = (pre_job_dir, pre_var_names, pre_var_values)
         sol_ti = einstein(data_in, dlbd, Tlist[0],
-                          directory=f"{phdir}/einstein", mode=mode)
+                          directory=f"{phdir}/einstein")
         res = sol_ti.setup(general, barostat, depend)
         sol_jobs += sol_ti.get_joblist()
     return sol_jobs

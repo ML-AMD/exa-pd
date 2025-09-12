@@ -15,7 +15,6 @@ class einstein(lammpsJobGroup):
                  dlbd,             # delta_lambda for thermodynamical integration
                  T,                # temperature
                  directory="./",   # path to group directory
-                 mode="scratch",   # scratch, restart, or process
                  ):
 
         super().__init__(directory)
@@ -29,7 +28,6 @@ class einstein(lammpsJobGroup):
         self._natom = natom
         self._ntyp = ntyp
         self._nab = nab
-        self._mode = mode
 
     def setup(self, general, barostat, depend):
         '''
@@ -43,7 +41,7 @@ class einstein(lammpsJobGroup):
             scriptFile = f"{jobdir}/lmp.in"
             job = lammpsJob(directory=jobdir,
                             scriptFile=scriptFile, arch="cpu",
-                            depend=depend, priority=2)
+                            depend=depend)
             if not os.path.exists(scriptFile):
                 self.write_script(job._script, general, lbd, barostat)
             self._jobList.append(job)
