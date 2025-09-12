@@ -26,7 +26,7 @@ Additionally:
 - Ensure you have prepared the crystal structures for solid phases (line compounds) for free energy calculations in the format of Crystallographic Information File (CIF) or Vienna Ab initio Simulation Package (VASP). 
 - Create a json file that specifies all the input parameters for exa-PD. See for example [configs/input.json](configs/input.json).
 
-## Registering a new Parsl configuration
+## Register a new Parsl configuration
 We currently support the automated workflows on NERSC's Perlmutter. If you would like to run on a different computing system, you must add your own Parsl configuration following these steps:
 
 1. Create a new file in the `parsl_configs` directory, similar to the one in [parsl_configs/perlmutter.py](parsl_configs/perlmutter.py)
