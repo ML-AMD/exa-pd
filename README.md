@@ -3,7 +3,7 @@ Exa-pd is a highly parallelizable workflow for constructing multi-element phase 
 
 ## Table of Contents
 - [Prerequisites](#prerequisites)
-- [Register a new Parsl configuration](#register-parsl-config)
+- [Register a new Parsl configuration](#register-a-new-parsl-configuration)
 - [Usage](#usage)
 - [Examples](#examples)
 
