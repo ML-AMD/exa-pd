@@ -36,9 +36,9 @@ def liquidJobs(general, liquid):
     try:
         ref_pair_style = liquid["ref_pair_style"]
         ref_pair_coeff = liquid["ref_pair_coeff"]
-        ref_pair = lammpsPair(ref_pair_style, ref_pair_coeff)
+        gen_ref_pair = lammpsPair(ref_pair_style, ref_pair_coeff)
     except KeyError:
-        ref_pair = None
+        gen_ref_pair = None
     try:
         dlbd = liquid["dlbd"]
     except KeyError:
@@ -64,6 +64,10 @@ def liquidJobs(general, liquid):
     n1 = natom * comp1
     dn = (n1 - n0) / ncomp
     for icomp in range(ncomp + 1):
+        if icomp == 0:
+            ref_pair = None # always use UFM as ref for comp0
+        else:
+            ref_pair = gen_ref_pair
         n = n0 + icomp * dn
         n = n.astype(int)
         # fix possible rounding error

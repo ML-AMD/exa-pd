@@ -3,6 +3,8 @@ from jobs.alchem import *
 from jobs.einstein import *
 from jobs.tramp import *
 import matplotlib.pyplot as plt
+from tools.logging_config import exapd_logger
+from tools.utils import merge_arrays
 import os
 import sys
 
@@ -14,7 +16,7 @@ def process_liquid(general, liquid, T0, G0, write_file=True):
     '''
     liq_dir = f"{general.proj_dir}/liquid"
     if not os.path.isdir(liq_dir):
-        raise Exception(f"{liq_dir} does not exist for post-processing!")
+        rexapd_logger.critical(f"{liq_dir} does not exist for post-processing!")
     data_in = os.path.abspath(liquid["data_in"])
     comp0 = liquid["initial_comp"]
     comp1 = liquid["final_comp"]
@@ -26,10 +28,21 @@ def process_liquid(general, liquid, T0, G0, write_file=True):
         dlbd = liquid["dlbd"]
     except KeyError:
         dlbd = 0.05
-    Tmin = liquid["Tmin"]
-    Tmax = liquid["Tmax"]
-    dT = liquid["dT"]
-    Tlist = np.arange(Tmin, Tmax + 0.1 * dT, dT)
+    try: 
+        Tlist = np.sort(liquid["Tlist"])
+    except KeyError:
+        Tlist = None
+    try:
+        Tmin = liquid["Tmin"]
+        Tmax = liquid["Tmax"]
+        dT = liquid["dT"]
+        if Tlist is None:
+            Tlist = np.arange(Tmin, Tmax + 0.1 * dT, dT)
+        else:
+            Tlist = merge_arrays(Tlist, np.arange(Tmin, Tmax + 0.1 * dT, dT))
+    except KeyError:
+        if Tlist is None:
+            exapd_logger.critical("Tlist cannot be created for liquid.")
     # create a finer T-mesh for smooth free energy
     if general.units == "lj":
         kb = 1
@@ -91,7 +104,6 @@ def process_liquid(general, liquid, T0, G0, write_file=True):
         G1 = np.zeros(len(Tall))
     res = scipy.optimize.curve_fit(tlogpoly, Tall, G0, np.ones(6))
     params = res[0]
-    print(*params)
     # create TDB entry for end member
     phase, end, rk = create_tdb_header_binsol("liq", *general.system[:2])
     tdb += phase
@@ -120,7 +132,6 @@ def process_liquid(general, liquid, T0, G0, write_file=True):
     for i in range(4):
         res = scipy.optimize.curve_fit(tlogpoly, Tall, rkparams[:, i], np.ones(6))
         params = res[0]
-        print(*params)
         tdb += f"{rk[i]} {Tlist[0]} {params[0]:+.12g}{params[1]:+.12g}*T\n"
         tdb += f"   {params[2]:+.12g}*T*LN(T){params[3]:+.12g}*T**2{params[4]:+.12g}*T**(-1)\n"
         tdb += f"   {params[5]:+.12g}*T**3; {Tlist[-1]} N !\n"
@@ -134,17 +145,28 @@ def process_solid(general, solid, write_file=True):
     '''
     sol_dir = f"{general.proj_dir}/solid"
     if not os.path.isdir(sol_dir):
-        raise Exception(f"{sol_dir} does not exist for post-processing job!")
+        exapd_logger.critical(f"{sol_dir} does not exist for post-processing.")
 
     phases = solid["phases"]
     try:
         dlbd = solid["dlbd"]
     except KeyError:
         dlbd = 0.05
-    Tmin = solid["Tmin"]
-    Tmax = solid["Tmax"]
-    dT = solid["dT"]
-    Tlist = np.arange(Tmin, Tmax + 0.1 * dT, dT)
+    try: 
+        Tlist = np.sort(solid["Tlist"])
+    except KeyError:
+        Tlist = None
+    try:
+        Tmin = solid["Tmin"]
+        Tmax = solid["Tmax"]
+        dT = solid["dT"]
+        if Tlist is None:
+            Tlist = np.arange(Tmin, Tmax + 0.1 * dT, dT)
+        else:
+            Tlist = merge_arrays(Tlist, np.arange(Tmin, Tmax + 0.1 * dT, dT))
+    except KeyError:
+        if Tlist is None:
+            exapd_logger.critical("Tlist cannot be created for solid.")
     # create a finer T-mesh for smooth free energy
     if general.units == "lj":
         ddT = 0.01
@@ -193,7 +215,6 @@ def process_solid(general, solid, write_file=True):
         # fitting to log-poly function
         res = scipy.optimize.curve_fit(tlogpoly, Tall, Gall, np.ones(6))
         params = res[0]
-        print(*params)
         # create TDB entry
         tdb += create_tdb_header_nonsol(name, general.system, nab)
         tdb += f"{Tlist[0]:g} {params[0]:+.12g}{params[1]:+.12g}*T\n"

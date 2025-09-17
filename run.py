@@ -23,21 +23,25 @@ if __name__ == '__main__':
     except Exception as e:
         exapd_logger.critical(f"{e}: Setting up lammpsPara failed")
 
+    # initialize job list
+    jobs = []
+
     # set up liquid jobs
-    try:
-        liq_jobs = liquidJobs(general, inp["liquid"])
-    except Exception as e:
-        #exapd_logger.critical(f"{e}: Setting up liquid jobs failed")    
-        liq_jobs = []
-        exapd_logger.warning(f"{e}: Setting up liquid jobs failed")    
+    if "liquid" in inp:
+        try:
+            jobs += liquidJobs(general, inp["liquid"])
+        except Exception as e:
+            exapd_logger.critical(f"{e}: Setting up liquid jobs failed")    
 
     # set up solid jobs
-    try:
-        sol_jobs = solidJobs(general, inp["solid"])
-    except Exception as e:
-        exapd_logger.critical(f"{e}: Setting up solid jobs failed")    
+    if "solid" in inp:
+        try:
+            jobs += solidJobs(general, inp["solid"])
+        except Exception as e:
+            exapd_logger.critical(f"{e}: Setting up solid jobs failed")    
 
-    jobs = liq_jobs + sol_jobs
+    print(len(jobs))
+    exit(1)
     # launch jobs
     jobs.sort(key = lambda job: job._priority)
     parsl_job_dict={}
@@ -71,4 +75,3 @@ if __name__ == '__main__':
     wait_for_current_tasks()
     print("all done")
     parsl.dfk().cleanup()
-

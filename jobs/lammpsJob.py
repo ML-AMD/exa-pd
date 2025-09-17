@@ -108,6 +108,9 @@ class lammpsPair:
         self._cmd = "pair_style\t" + pair_style + '\n'
         self._name = values[0]  # name of the pair style
         if len(values) > 1:
+            for i in range(1, len(values)):
+                if os.path.exists(values[i]):
+                    values[i] = os.path.abspath(values[i])
             # other parameters for the pair style
             self._param = ' '.join(values[1:])
         else:
@@ -119,10 +122,13 @@ class lammpsPair:
         self._numTyp = []  # list of numeric types for each pair_coeff
         self._coeff = []  # list of coeff for each pair_coeff
         for line in values:
-            self._cmd += 'pair_coeff\t' + line + '\n'
+            self._cmd += "pair_coeff\t" + line + '\n'
             words = line.split()
             self._numTyp.append(' '.join(words[:2]))
             if len(words) > 2:
+                for i in range(2, len(words)):
+                    if os.path.exists(words[i]):
+                       words[i] = os.path.abspath(words[i])
                 self._coeff.append(' '.join(words[2:]))
             else:
                 self._coeff.append('')
