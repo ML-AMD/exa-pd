@@ -135,7 +135,7 @@ def create_lammps_supercell(system, infile, outfile, ntarget=500, eps=1.e-3):
         cell = structure.get_cell()
         a, b, c = cell.lengths()
         barostat = "couple xy"
-    ### trigonal cell to be added ###
+    # trigonal cell to be added #
 
     # generate supercell
     rho = len(structure) / structure.get_volume()
