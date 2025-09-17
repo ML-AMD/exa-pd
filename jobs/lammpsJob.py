@@ -1,6 +1,7 @@
-import os
 import numpy as np
+from tools.logging_config import exapd_logger
 import sys
+import os
 
 
 class lammpsJob:
@@ -25,9 +26,9 @@ class lammpsJob:
         if not os.path.isdir(directory):
             try:
                 os.mkdir(directory)
-            except BaseException:
-                print(f"Error: cannot create directory {directory}!")
-                sys.exit(1)
+            except Exception as e:
+                exapd_logger.critical(
+                    f"{e}: Cannot create directory {directory}.")
         self._script = scriptFile
 
     def get_dir(self):
@@ -64,13 +65,9 @@ class lammpsJob:
             try:
                 cols.append(varLogged.index(var))
             except ValueError:
-                print(f"{var} is not sampled in {outfile}!")
-                sys.exit(1)
+                exapd_logger.critical(f"{var} is not sampled in {outfile}!")
         data = np.loadtxt(outfile, skiprows=beginline, max_rows=endline - beginline,
                           usecols=cols, ndmin=2)
-        # if data.shape[0] <= skip:
-        #    skip = 0
-        #    print("Warning: not enough data to be skipped, reset skip = 0.")
         return np.mean(data[int(skip * len(data)):, :], axis=0)
 
 
@@ -87,13 +84,11 @@ class lammpsJobGroup:
         if not os.path.isdir(directory):
             try:
                 os.mkdir(directory)
-            except BaseException:
-                print(f"Error: cannot create directory {directory}!")
-                sys.exit(1)
+            except Exception as e:
+                exapd_logger.critical(
+                    f"{e}: Cannot create directory {directory}!")
         self._jobList: List[lammpsJob] = []
 
- #  def launch(self):
- #       for job in self._jobList:
     def get_joblist(self):
         return self._jobList
 
@@ -128,7 +123,7 @@ class lammpsPair:
             if len(words) > 2:
                 for i in range(2, len(words)):
                     if os.path.exists(words[i]):
-                       words[i] = os.path.abspath(words[i])
+                        words[i] = os.path.abspath(words[i])
                 self._coeff.append(' '.join(words[2:]))
             else:
                 self._coeff.append('')
@@ -147,56 +142,56 @@ class lammpsPara:
             if isinstance(self.mass, list) and len(self.mass) != len(self.system):
                 print("Error: number of elements in mass and system doesn't match!")
                 sys.exit(1)
-        except BaseException:
+        except KeyError:
             self.mass = None  # has to be provided in data.in or potential file
         try:
             self.units = general["units"]
-        except BaseException:
+        except KeyError:
             self.units = "metal"  # default units is metal
         pair_style = general["pair_style"]
         pair_coeff = general["pair_coeff"]
         self.pair = lammpsPair(pair_style, pair_coeff)
         try:
             self.proj_dir = os.path.abspath(general["dir"])
-        except BaseException:
+        except KeyError:
             self.proj_dir = os.getcwd()  # default is current directory
         if not os.path.isdir(self.proj_dir):
             try:
                 os.mkdir(self.proj_dir)
-            except BaseException:
-                print(f"Error: cannot create directory {directory}!")
-                sys.exit(1)
+            except Exception as e:
+                exapd_logger.critical(
+                    f"{e}: Cannot create directory {directory}!")
         try:
             self.neighbor = general["neighbor"]
-        except BaseException:
+        except KeyError:
             self.neighbor = None
         try:
             self.neigh_modify = general["neigh_modify"]
-        except BaseException:
+        except KeyError:
             self.neigh_modify = "delay 10"
         try:
             self.timestep = general["timestep"]
-        except BaseException:
+        except KeyError:
             self.timestep = None
         try:
             self.thermo = general["thermo"]
-        except BaseException:
+        except KeyError:
             self.thermo = 100
         try:
             self.pressure = general["pressure"]
-        except BaseException:
+        except KeyError:
             self.pressure = 0
         try:
             self.Tdamp = general["Tdamp"]
-        except BaseException:
+        except KeyError:
             self.Tdamp = "$(100.0*dt)"
         try:
             self.Pdamp = general["Pdamp"]
-        except BaseException:
+        except KeyError:
             self.Pdamp = "$(1000.0*dt)"
         try:
             self.run = general["run"]
-        except BaseException:
+        except KeyError:
             self.run = 1000000
 
 

@@ -43,7 +43,7 @@ def liquidJobs(general, liquid):
         dlbd = liquid["dlbd"]
     except KeyError:
         dlbd = 0.05
-    try: 
+    try:
         Tlist = np.sort(liquid["Tlist"])
     except KeyError:
         Tlist = None
@@ -65,7 +65,7 @@ def liquidJobs(general, liquid):
     dn = (n1 - n0) / ncomp
     for icomp in range(ncomp + 1):
         if icomp == 0:
-            ref_pair = None # always use UFM as ref for comp0
+            ref_pair = None  # always use UFM as ref for comp0
         else:
             ref_pair = gen_ref_pair
         n = n0 + icomp * dn
@@ -82,9 +82,10 @@ def liquidJobs(general, liquid):
             try:
                 os.mkdir(compdir)
             except Exception as e:
-                exapd_logger.critical(f"{e}: Cannot create directory {compdir}!")
+                exapd_logger.critical(
+                    f"{e}: Cannot create directory {compdir}!")
         # set up alchem jobs
-        if ref_pair is None: # set up depend feature for UFM 
+        if ref_pair is None:  # set up depend feature for UFM
             pre_job_dir = f"{compdir}/tramp/T{Tlist[-1]:g}"
             pre_var_names = ["vol"]
             pre_var_values = ["Volume"]
@@ -122,7 +123,7 @@ def solidJobs(general, solid):
         dlbd = solid["dlbd"]
     except KeyError:
         dlbd = 0.05
-    try: 
+    try:
         Tlist = np.sort(solid["Tlist"])
     except KeyError:
         Tlist = None
@@ -165,7 +166,8 @@ def solidJobs(general, solid):
                 barostat = create_lammps_supercell(
                     general.system, ph_file, data_in, ntarget=ntarget)
             except Exception as e:
-                exapd_logger.critical(f"{e}: ASE could not generate the lammps input for {ph_file}.")
+                exapd_logger.critical(
+                    f"{e}: ASE could not generate the lammps input for {ph_file}.")
         # set up pre jobs
         sol_pre = tramp(data_in, Tlist[:1], f"{phdir}/tramp",
                         barostat=barostat)

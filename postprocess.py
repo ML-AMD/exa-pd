@@ -16,7 +16,8 @@ def process_liquid(general, liquid, T0, G0, write_file=True):
     '''
     liq_dir = f"{general.proj_dir}/liquid"
     if not os.path.isdir(liq_dir):
-        rexapd_logger.critical(f"{liq_dir} does not exist for post-processing!")
+        rexapd_logger.critical(
+            f"{liq_dir} does not exist for post-processing!")
     data_in = os.path.abspath(liquid["data_in"])
     comp0 = liquid["initial_comp"]
     comp1 = liquid["final_comp"]
@@ -28,7 +29,7 @@ def process_liquid(general, liquid, T0, G0, write_file=True):
         dlbd = liquid["dlbd"]
     except KeyError:
         dlbd = 0.05
-    try: 
+    try:
         Tlist = np.sort(liquid["Tlist"])
     except KeyError:
         Tlist = None
@@ -72,7 +73,8 @@ def process_liquid(general, liquid, T0, G0, write_file=True):
             raise Exception(f"{compdir} does not exist for post-processing!")
         #  process alchem jobs
         if icomp > 0:
-            liq_alchem = alchem(data_in, dlbd, Tmax, f"{compdir}/alchem", nab=n)
+            liq_alchem = alchem(data_in, dlbd, Tmax,
+                                f"{compdir}/alchem", nab=n)
             det_G = liq_alchem.process(general)
         # process T-ramping jobs
         liq_tramp = tramp(data_in, Tlist, f"{compdir}/tramp", nab=n)
@@ -86,7 +88,8 @@ def process_liquid(general, liquid, T0, G0, write_file=True):
             G = Gibbs_Helmholtz(arrT, arrH, T0, G0, Tall)
             Gall = G.reshape(-1, 1)
         else:
-            G = Gibbs_Helmholtz(arrT, arrH, Tlist[-1], Gall[-1, 0] + det_G, Tall)
+            G = Gibbs_Helmholtz(
+                arrT, arrH, Tlist[-1], Gall[-1, 0] + det_G, Tall)
             Gall = np.column_stack((Gall, G))
         xall[icomp] = 1 - n[0] / natom
     if write_file:
@@ -125,12 +128,14 @@ def process_liquid(general, liquid, T0, G0, write_file=True):
         xdata = np.append(xall, 1)
         ydata.append(0)
         # least square fitting
-        res = scipy.optimize.curve_fit(redlich_kister, xdata, ydata, np.ones(4))
+        res = scipy.optimize.curve_fit(
+            redlich_kister, xdata, ydata, np.ones(4))
         rkparams.append(res[0])
     rkparams = np.array(rkparams)
     # fit log-poly function for T-dependence
     for i in range(4):
-        res = scipy.optimize.curve_fit(tlogpoly, Tall, rkparams[:, i], np.ones(6))
+        res = scipy.optimize.curve_fit(
+            tlogpoly, Tall, rkparams[:, i], np.ones(6))
         params = res[0]
         tdb += f"{rk[i]} {Tlist[0]} {params[0]:+.12g}{params[1]:+.12g}*T\n"
         tdb += f"   {params[2]:+.12g}*T*LN(T){params[3]:+.12g}*T**2{params[4]:+.12g}*T**(-1)\n"
@@ -152,7 +157,7 @@ def process_solid(general, solid, write_file=True):
         dlbd = solid["dlbd"]
     except KeyError:
         dlbd = 0.05
-    try: 
+    try:
         Tlist = np.sort(solid["Tlist"])
     except KeyError:
         Tlist = None
@@ -204,7 +209,8 @@ def process_solid(general, solid, write_file=True):
                 pre_var_names.append(f"msd{i+1}")
                 pre_var_values.append(f"c_c{i+1}[4]")
         depend = (pre_job_dir, pre_var_names, pre_var_values)
-        sol_ti = einstein(data_in, dlbd, Tlist[0], directory=f"{phdir}/einstein")
+        sol_ti = einstein(
+            data_in, dlbd, Tlist[0], directory=f"{phdir}/einstein")
         # calculate G(T) using Gibbs-Helmholtz equation
         G0 = sol_ti.process(general, depend)
         Gall = Gibbs_Helmholtz(arrT, arrH, Tlist[0], G0, Tall)
@@ -254,7 +260,8 @@ def fix_enthalpy(arrT, arrH, phase):
         if abs(dH[i]) > 2.0 * abs(avg_prev):
             # linear interpolate to the last temperature
             sortedT[i + 1] = sortedT[-1]
-            sortedH[i + 1] = sortedH[i] + dH[i - 1] * (sortedT[i + 1] - sortedT[i])
+            sortedH[i + 1] = sortedH[i] + dH[i - 1] * \
+                (sortedT[i + 1] - sortedT[i])
             sortedT = sortedT[:i + 2]
             sortedH = sortedH[:i + 2]
             break
@@ -279,7 +286,8 @@ def Gibbs_Helmholtz(arrT, arrH, T0, G0, Tall):
     Gall: G for Tall
     '''
     if not np.all(np.diff(Tall) > 0):
-        raise Exception("Tall should be strictly sorted in ascending order for G-H integration.")
+        raise Exception(
+            "Tall should be strictly sorted in ascending order for G-H integration.")
 
     i0 = np.searchsorted(Tall, T0)
     if Tall[i0] == T0:
@@ -289,7 +297,8 @@ def Gibbs_Helmholtz(arrT, arrH, T0, G0, Tall):
 
     # Interpolate enthalpy values using cubic spline
     # H = scipy.interpolate.interp1d(x, y, kind='cubic', fill_value='extrapolate')(T)
-    interpolator = scipy.interpolate.PchipInterpolator(arrT, arrH, extrapolate=True)
+    interpolator = scipy.interpolate.PchipInterpolator(
+        arrT, arrH, extrapolate=True)
     Hint = interpolator(Tint)
     # Initialize ΔG/T array
     detG_over_T = np.zeros(len(Tint))
@@ -297,9 +306,11 @@ def Gibbs_Helmholtz(arrT, arrH, T0, G0, Tall):
 
     # Compute Gibbs free energy difference over temperature
     for i in range(i0):
-        detG_over_T[i] = scipy.integrate.simpson(Hint[i:i0 + 1] / Tint[i:i0 + 1]**2, Tint[i:i0 + 1])
+        detG_over_T[i] = scipy.integrate.simpson(
+            Hint[i:i0 + 1] / Tint[i:i0 + 1]**2, Tint[i:i0 + 1])
     for i in range(i0, len(Tint)):
-        detG_over_T[i] = -scipy.integrate.simpson(Hint[i0:i + 1] / Tint[i0:i + 1]**2, Tint[i0:i + 1])
+        detG_over_T[i] = -scipy.integrate.simpson(
+            Hint[i0:i + 1] / Tint[i0:i + 1]**2, Tint[i0:i + 1])
 
     # Compute absolute Gibbs free energy
     Gall = (detG_over_T + G0_over_T0) * Tint

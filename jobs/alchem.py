@@ -16,7 +16,8 @@ class alchem(lammpsJobGroup):
                  T,                # temperature
                  directory,        # path to group directory
                  ref_pair=None,    # reference pair style/coeff for TI
-                 nab=None,         # number of atoms of each type, [na, nb, ...],
+                 # number of atoms of each type, [na, nb, ...],
+                 nab=None,
                  # if given, change comp in data_in accordingly
                  barostat="iso",   # barostat for npt, if "none", run nvt
                  ):
@@ -52,7 +53,6 @@ class alchem(lammpsJobGroup):
                 self.write_script(job._script, general, lbd)
             self._jobList.append(job)
 
-
     def write_script(self, scriptFile, general, lbd):
         natom = self._natom
         if self._ref_pair is None:  # use UFM as reference by default
@@ -62,9 +62,10 @@ class alchem(lammpsJobGroup):
             elif general.units == "metal":
                 kb = 8.617333262e-5
                 sigma = 1.5  # angstroms
-            pair0 = lammpsPair(f"ufm {5*sigma}", f"* * {kb*self._T*50} {sigma}")  # default p=50
+            pair0 = lammpsPair(
+                f"ufm {5*sigma}", f"* * {kb*self._T*50} {sigma}")  # default p=50
             barostat = "none"  # run nvt
-            
+
         else:
             pair0 = self._ref_pair
             barostat = self._barostat
@@ -86,9 +87,10 @@ class alchem(lammpsJobGroup):
             f.write(reset_types(self._nab, natom))
         f.write("\n")
         # rescale the box for nvt if UFM is used as ref
-        if self._ref_pair is None: 
+        if self._ref_pair is None:
             f.write("variable        a equal v_vol^(1.0/3.0)\n")
-            f.write("change_box      all x final 0 $a y final 0 $a z final 0 $a remap units box\n") 
+            f.write(
+                "change_box      all x final 0 $a y final 0 $a z final 0 $a remap units box\n")
         f.write("\n")
         f.write(hybridPair(pair0, pair1, lbd))
         if pair0._name == pair1._name:
@@ -109,7 +111,8 @@ class alchem(lammpsJobGroup):
             else:
                 f.write(f"mass            * {general.mass}\n")
         f.write("\n")
-        f.write(f"velocity        all create {self._T:g} {np.random.randint(1000000)} rot yes dist gaussian\n")
+        f.write(
+            f"velocity        all create {self._T:g} {np.random.randint(1000000)} rot yes dist gaussian\n")
         if general.timestep is not None:
             f.write(f"timestep        {general.timestep}\n")
         f.write("\n")
@@ -118,16 +121,19 @@ class alchem(lammpsJobGroup):
         f.write("thermo_modify   lost error norm yes\n")
         f.write("\n")
         if barostat == "none":  # run nvt
-            f.write(f"fix             1 all nvt temp {self._T} {self._T} {general.Tdamp}\n")
+            f.write(
+                f"fix             1 all nvt temp {self._T} {self._T} {general.Tdamp}\n")
         elif "couple" not in barostat:
             baro_style = f"{barostat} {general.pressure} {general.pressure} {general.Pdamp}"
-            f.write(f"fix             1 all npt temp {self._T} {self._T} {general.Tdamp} {baro_style}\n")
+            f.write(
+                f"fix             1 all npt temp {self._T} {self._T} {general.Tdamp} {baro_style}\n")
         else:
             baro_style = f"x {general.pressure} {general.pressure} {general.Pdamp} "\
                 + f"y {general.pressure} {general.pressure} {general.Pdamp} "\
                 + f"z {general.pressure} {general.pressure} {general.Pdamp} "\
                 + barostat
-            f.write(f"fix             1 all npt temp {self._T} {self._T} {general.Tdamp} {baro_style}\n")
+            f.write(
+                f"fix             1 all npt temp {self._T} {self._T} {general.Tdamp} {baro_style}\n")
 
         f.write(f"run             {general.run}\n")
         f.close()
@@ -138,7 +144,8 @@ class alchem(lammpsJobGroup):
         for ilbd, lbd in self._lbdList:
             jobdir = f"{self._dir}/{ilbd}"
             if not os.path.isdir(jobdir):
-                raise Exception(f"Error: {jobdir} does not exist for post processing!")
+                raise Exception(
+                    f"Error: {jobdir} does not exist for post processing!")
             # if not os.path.exists(f"{jobdir}/DONE"):
             #    raise Exception(f"Error: job is not DONE in {jobdir} for post processing!")
             job = lammpsJob(directory=jobdir)

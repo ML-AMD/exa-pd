@@ -123,13 +123,15 @@ def create_lammps_supercell(system, infile, outfile, ntarget=500, eps=1.e-3):
             barostat = "aniso"
     elif abs(a - b) < eps and abs(alpha - 90) < eps \
             and abs(beta - 90) < eps and abs(gamma - 120) < eps:  # hexagonal cell
-        structure = make_supercell(structure, [[1, -1, 0], [1, 1, 0], [0, 0, 1]])
+        structure = make_supercell(
+            structure, [[1, -1, 0], [1, 1, 0], [0, 0, 1]])
         cell = structure.get_cell()
         a, b, c = cell.lengths()
         barostat = "couple xy"
     elif abs(a - b) < eps and abs(alpha - 90) < eps \
             and abs(beta - 90) < eps and abs(gamma - 60) < eps:  # hexagonal cell
-        structure = make_supercell(structure, [[1, 1, 0], [-1, 1, 0], [0, 0, 1]])
+        structure = make_supercell(
+            structure, [[1, 1, 0], [-1, 1, 0], [0, 0, 1]])
         cell = structure.get_cell()
         a, b, c = cell.lengths()
         barostat = "couple xy"
@@ -169,7 +171,8 @@ def create_lammps_supercell(system, infile, outfile, ntarget=500, eps=1.e-3):
         f.write(f"0.0      {ly:.6f} ylo yhi\n")
         f.write(f"0.0      {lz:.6f} zlo zhi\n")
     else:  # triclinic cell
-        lx, ly, lz, xy, xz, yz = create_triclinic_box(a, b, c, alpha, beta, gamma)
+        lx, ly, lz, xy, xz, yz = create_triclinic_box(
+            a, b, c, alpha, beta, gamma)
         f.write(f"0.0      {lx:.6f} xlo xhi\n")
         f.write(f"0.0      {ly:.6f} ylo yhi\n")
         f.write(f"0.0      {lz:.6f} zlo zhi\n")
@@ -183,7 +186,8 @@ def create_lammps_supercell(system, infile, outfile, ntarget=500, eps=1.e-3):
             x = fx * lx + fy * xy + fz * xz
             y = fy * ly + fz * yz
             z = fz * lz
-            f.write(f"{i+1:6d} {system.index(types[i])+1:4d} {x:16.6f} {y:16.6f} {z:16.6f}\n")
+            f.write(
+                f"{i+1:6d} {system.index(types[i])+1:4d} {x:16.6f} {y:16.6f} {z:16.6f}\n")
         else:
             raise Exception(f"element {typ} is not in system in {infile}!")
     f.close()
@@ -275,14 +279,14 @@ def create_tdb_header_binsol(name, el1, el2):
 def merge_arrays(arr1, arr2, tolerance=0.001):
     # Combine the arrays
     combined = np.concatenate((arr1, arr2))
-    
+
     # Sort the combined array
     combined = np.sort(combined)
-    
+
     # Remove duplicates within tolerance
     result = [combined[0]]
     for i in range(1, len(combined)):
         if abs(combined[i] - result[-1]) > tolerance:
             result.append(combined[i])
-            
+
     return np.array(result)
