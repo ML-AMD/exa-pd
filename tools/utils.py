@@ -290,3 +290,25 @@ def merge_arrays(arr1, arr2, tolerance=0.001):
             result.append(combined[i])
 
     return np.array(result)
+
+def F_idealgas (temp, rho, natom, mass, comp, constants):
+    '''
+    free energy of ideal gas;
+    temp: temperature; rho: number density; natom: number of atoms;
+    mass: atomic masses; comp: compoistion.
+    constants: physical constants
+    '''
+    # constants
+    kb, hbar, au = constants
+
+    beta = 1 / (kb * temp)
+    debroglie = [np.sqrt(2 * np.pi * beta * hbar ** 2 / (m * au)) 
+                 for m in mass]
+    FE = 0
+    for k in range(len(comp)):
+        if(comp[k] == 0):
+            FE += 0
+        else:
+            FE += comp[k] * (3 * np.log(debroglie[k]) + np.log(rho) - 1 + np.log(comp[k]))
+    return 1 / beta * FE
+

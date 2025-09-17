@@ -52,7 +52,7 @@ class lammpsJob:
         '''
         outfile = f"{self._dir}/{logfile}"
         if not os.path.exists(outfile):
-            raise Exception(f"{outfile} does not exist!")
+            exapd_logger.critical(f"{outfile} does not exist!")
         with open(outfile) as infile:
             for i, line in enumerate(infile):
                 if 'Step ' in line:
@@ -225,7 +225,7 @@ def reset_types(nab, natom):
     natom: total number of atoms.
     '''
     if sum(nab) != natom or min(nab) < 0:
-        raise Exception("Error: Incorrect number of atoms!")
+        exapd_logger.critical("Error: Incorrect number of atoms!")
     ntot = nab[0]
     cmd = f"group           g1 id <= {ntot}\n"
     cmd += f"set             group g1 type 1\n"

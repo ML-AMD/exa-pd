@@ -3,6 +3,8 @@ import os
 import scipy
 from jobs.lammpsJob import *
 from tools.utils import *
+from tools.ufgenerator import get_UF
+from tools.logging_config import exapd_logger
 
 
 class alchem(lammpsJobGroup):
@@ -139,31 +141,52 @@ class alchem(lammpsJobGroup):
         f.close()
 
     def process(self, general):
+        # define physical constants
+        if general.units == "lj":
+            kb = hbar = au = 1
+        elif general.units == "metal":
+            kb = 8.617333262e-5  # eV / K
+            hbar = 6.582119569e-16  # eV * s
+            au = 1.0364269190e-28  # eV * s^2 / A^2
         # contribution from thermodynamic integration
         dU = []
-        for ilbd, lbd in self._lbdList:
+        for ilbd, lbd in enumerate(self._lbdList):
             jobdir = f"{self._dir}/{ilbd}"
             if not os.path.isdir(jobdir):
-                raise Exception(
-                    f"Error: {jobdir} does not exist for post processing!")
-            # if not os.path.exists(f"{jobdir}/DONE"):
-            #    raise Exception(f"Error: job is not DONE in {jobdir} for post processing!")
+                exapd_logger.critical(
+                    f"{jobdir} does not exist for post processing.")
+            if not os.path.exists(f"{jobdir}/DONE"):
+                exapd_logger.warning(f"DONE does not exist in {jobdir}.")
             job = lammpsJob(directory=jobdir)
             [U0, U1] = job.sample(varList=["c_U0", "c_U1"],
                                   logfile="log.lammps")
             dU.append([lbd, U1 - U0])
         dU = np.asarray(dU)
         dG = scipy.integrate.simpson(dU[:, 1], dU[:, 0])
-        if general.units == "lj":
-            kb = 1
-        elif general.units == "metal":
-            kb = 8.617333262e-5  # eV / K
-        for i in range(self._ntyp):
-            if self._nab[i] > 0:
-                xi = self._nab[i] / self._natom
-                # contribution from mixing entropy
-                dG += kb * self._T * xi * np.log(xi)
-                # contribution from mass change
-                dG += 1.5 * kb * self._T * xi * \
-                    np.log(general.mass[0] / general.mass[i])
+        comp = [n / self._natom for n in self._nab]
+        if self._ref_pair is None: # UFM as ref
+            # params for the UFM model
+            if general.units == "lj":
+                sigma = 0.5  # LJ length unit
+            elif general.units == "metal":
+                kb = 8.617333262e-5
+                sigma = 1.5  # angstroms
+            p = 50
+            job = lammpsJob(directory=f"{self._dir}/0")
+            vol = job.sample(["Volume"])[0]
+            rho = self._natom / vol
+            F_ig = F_idealgas(self._T, rho, self._natom, general.mass, 
+                              comp, (kb, hbar, au))
+            x = (0.5 * (np.pi * sigma * sigma) ** 1.5) * rho
+            press, F0 = get_UF(p, x)
+            F0 *= (kb * self._T)
+            dG += (F_ig + F0 + general.pressure * vol)
+        else: # comp0 as ref
+            m0 = general.mass[0]
+            for x, m in zip(comp, general.mass):
+                if x > 0:
+                    # contribution from mixing entropy
+                    dG += kb * self._T * x * np.log(x)
+                    # contribution from mass change
+                    dG += 1.5 * kb * self._T * x * np.log(m0 / m)
         return dG

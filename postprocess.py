@@ -6,10 +6,9 @@ import matplotlib.pyplot as plt
 from tools.logging_config import exapd_logger
 from tools.utils import merge_arrays
 import os
-import sys
 
 
-def process_liquid(general, liquid, T0, G0, write_file=True):
+def process_liquid(general, liquid, write_file=True):
     '''
     post-process liquid calculations.
     G0: Gibbs free energy of the pure phase at T = T_alchem (Tlist[-1])
@@ -21,10 +20,19 @@ def process_liquid(general, liquid, T0, G0, write_file=True):
     data_in = os.path.abspath(liquid["data_in"])
     comp0 = liquid["initial_comp"]
     comp1 = liquid["final_comp"]
+    # normalize comp0 and comp1
+    comp0 = np.array(comp0) / sum(comp0)
+    comp1 = np.array(comp1) / sum(comp1)
     try:
         ncomp = liquid["ncomp"]
     except KeyError:
         ncomp = 10
+    try:
+        ref_pair_style = liquid["ref_pair_style"]
+        ref_pair_coeff = liquid["ref_pair_coeff"]
+        gen_ref_pair = lammpsPair(ref_pair_style, ref_pair_coeff)
+    except KeyError:
+        gen_ref_pair = None
     try:
         dlbd = liquid["dlbd"]
     except KeyError:
@@ -51,6 +59,7 @@ def process_liquid(general, liquid, T0, G0, write_file=True):
     else:
         kb = 8.617333262e-5
         ddT = 10
+    R = 8.3144598 # gas constant
     Tall = np.arange(min(Tlist), max(Tlist) + 0.1 * ddT, ddT)
     tdb = ''  # entry of the liquid phase in the TDB file
     natom, ntyp = read_lmp_data(data_in)
@@ -58,7 +67,15 @@ def process_liquid(general, liquid, T0, G0, write_file=True):
     n1 = natom * np.asarray(comp1)
     dn = (n1 - n0) / ncomp
     xall = np.zeros(ncomp + 1)
-    for icomp in range(0, ncomp + 1):
+    for i in range(len(comp0)):
+        if comp0[i] < comp1[i]:
+            comp_idx = i
+            break
+    for icomp in range(ncomp + 1):
+        if icomp == 0:
+            ref_pair = None  # always use UFM as ref for comp0
+        else:
+            ref_pair = gen_ref_pair
         n = n0 + icomp * dn
         n = n.astype(int)
         # fix possible rounding error
@@ -70,12 +87,11 @@ def process_liquid(general, liquid, T0, G0, write_file=True):
                 n[idx[0]] += (natom - sum(n))
         compdir = f"{liq_dir}/comp{icomp}"
         if not os.path.isdir(compdir):
-            raise Exception(f"{compdir} does not exist for post-processing!")
+            rexapd_logger.critical(f"{compdir} does not exist for post-processing.")
         #  process alchem jobs
-        if icomp > 0:
-            liq_alchem = alchem(data_in, dlbd, Tmax,
-                                f"{compdir}/alchem", nab=n)
-            det_G = liq_alchem.process(general)
+        liq_alchem = alchem(data_in, dlbd, Tmax,
+                            f"{compdir}/alchem", ref_pair=ref_pair, nab=n)
+        det_G = liq_alchem.process(general)
         # process T-ramping jobs
         liq_tramp = tramp(data_in, Tlist, f"{compdir}/tramp", nab=n)
         res = liq_tramp.process()
@@ -85,35 +101,80 @@ def process_liquid(general, liquid, T0, G0, write_file=True):
             dT = 10
         arrT, arrH = fix_enthalpy(res[:, 0], res[:, 1], phase="liquid")
         if icomp == 0:
-            G = Gibbs_Helmholtz(arrT, arrH, T0, G0, Tall)
+            G = Gibbs_Helmholtz(arrT, arrH, Tlist[-1], det_G, Tall)
             Gall = G.reshape(-1, 1)
         else:
-            G = Gibbs_Helmholtz(
-                arrT, arrH, Tlist[-1], Gall[-1, 0] + det_G, Tall)
+            if ref_pair is None:
+                G0 = det_G # det_G is absolute for using UFM as ref
+            else:
+                G0 = det_G + Gall[-1, 0] # det_G is relative G to G(x=0) otherwise 
+            G = Gibbs_Helmholtz(arrT, arrH, Tlist[-1], G0, Tall)
             Gall = np.column_stack((Gall, G))
-        xall[icomp] = 1 - n[0] / natom
+        xall[icomp] = n[comp_idx] / natom
     if write_file:
-        header = "Gibbs free energy of the liquid phase\n   T  x = "
+        header = f"Gibbs free energy of the liquid phase\n   T  x_{general.system[comp_idx]} = "
         for x in xall:
             header += f"{x:.6f} "
         np.savetxt(f"{general.proj_dir}/g.liq.dat",
                    np.column_stack((Tall, Gall)), fmt="%.6f", header=header)
 
-    # fitting to log-poly function for end member
-    G0 = Gall[:, 0]
+    # generate TDB entry for (sub)binary system
+    # check if comp0 and comp1 belong to a sub-binary system 
+    create_tdb = True
+    binary = [None, None] 
+    for i in range(len(comp0)):
+        if comp0[i] > comp1[i]:
+            if binary[0] is None:
+                binary[0] = general.system[i]
+            else:
+                create_tdb = False
+                break
+        elif comp0[i] < comp1[i]:
+            if binary[1] is None:
+                binary[1] = general.system[i]
+            else:
+                create_tdb = False
+                break
+        else:
+            if comp0[i] != 0:
+                create_tdb = False
+                break
+    if not create_tdb:
+        exapd_logger.info("TDB only generated for (sub)binary systems.")
+        return ""
+    # set end members, extrapolate if necessary
+    if xall[0] == 0:
+        G0 = Gall[:, 0]
+    else:
+        G0 = np.zeros(len(Tall))
+        for i in range(len(G0)):
+            G0[i] = scipy.interpolate.interp1d(xall, Gall[i],
+                    kind='linear', fill_value='extrapolate')(0)
     if xall[-1] == 1:
         G1 = Gall[:, -1]
     else:
         G1 = np.zeros(len(Tall))
+        for i in range(len(G1)):
+            G1[i] = scipy.interpolate.interp1d(xall, Gall[i],
+                    kind='linear', fill_value='extrapolate')(1)
+            
+    phase, end, rk = create_tdb_header_binsol("liq", binary[:2])
+    tdb += phase # phase definition in TDB
+    # create TDB entry for end member x = 0
     res = scipy.optimize.curve_fit(tlogpoly, Tall, G0, np.ones(6))
-    params = res[0]
-    # create TDB entry for end member
-    phase, end, rk = create_tdb_header_binsol("liq", *general.system[:2])
-    tdb += phase
+    params = res[0] * R / kb  # default unit in CALPHAD is J/mol
     tdb += f"{end[0]} {Tlist[0]:g} {params[0]:+.12g}{params[1]:+.12g}*T\n"
     tdb += f"   {params[2]:+.12g}*T*LN(T){params[3]:+.12g}*T**2{params[4]:+.12g}*T**(-1)\n"
     tdb += f"   {params[5]:+.12g}*T**3; {Tlist[-1]:g} N !\n"
     tdb += "\n"
+    # create TDB entry for end member x = 1
+    res = scipy.optimize.curve_fit(tlogpoly, Tall, G1, np.ones(6))
+    params = res[0] * R / kb
+    tdb += f"{end[1]} {Tlist[0]:g} {params[0]:+.12g}{params[1]:+.12g}*T\n"
+    tdb += f"   {params[2]:+.12g}*T*LN(T){params[3]:+.12g}*T**2{params[4]:+.12g}*T**(-1)\n"
+    tdb += f"   {params[5]:+.12g}*T**3; {Tlist[-1]:g} N !\n"
+    tdb += "\n"
+
     # fit redlich-kister parameters
     rkparams = []
     for iT, T in enumerate(Tall):
@@ -136,7 +197,7 @@ def process_liquid(general, liquid, T0, G0, write_file=True):
     for i in range(4):
         res = scipy.optimize.curve_fit(
             tlogpoly, Tall, rkparams[:, i], np.ones(6))
-        params = res[0]
+        params = res[0] * R / kb
         tdb += f"{rk[i]} {Tlist[0]} {params[0]:+.12g}{params[1]:+.12g}*T\n"
         tdb += f"   {params[2]:+.12g}*T*LN(T){params[3]:+.12g}*T**2{params[4]:+.12g}*T**(-1)\n"
         tdb += f"   {params[5]:+.12g}*T**3; {Tlist[-1]} N !\n"
