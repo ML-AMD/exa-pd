@@ -74,7 +74,7 @@ class einstein(lammpsJobGroup):
         if general.mass is not None:
             if isinstance(general.mass, list):
                 for i in range(len(general.mass)):
-                    f.write(f"mass            {i+1} {general.mass[i]}\n")
+                    f.write(f"mass            {i + 1} {general.mass[i]}\n")
             else:
                 f.write(f"mass            * {general.mass}\n")
         f.write("\n")
@@ -98,16 +98,16 @@ class einstein(lammpsJobGroup):
             kb = 1
         elif general.units == "metal":
             kb = 8.617333262e-5
-        f.write(f"variable        pref equal {(1-lbd)*3*kb*self._T:.6f}\n")
+        f.write(f"variable        pref equal {(1 - lbd) * 3 * kb * self._T:.6f}\n")
         var_U1 = "variable        U1 equal \""
         for i in range(self._ntyp):
             if self._nab[i] > 0:
-                f.write(f"variable        k{i+1} equal v_pref/v_msd{i+1}\n")
-                f.write(f"group           g{i+1} type {i+1}\n")
+                f.write(f"variable        k{i + 1} equal v_pref/v_msd{i + 1}\n")
+                f.write(f"group           g{i + 1} type {i + 1}\n")
                 f.write(
-                    f"fix             {i+3} g{i+1} spring/self ${{k{i+1}}}\n")
-                f.write(f"fix_modify      {i+3} energy yes\n")
-                var_U1 += f"f_{i+3}/atoms/{1-lbd} + "
+                    f"fix             {i + 3} g{i + 1} spring/self ${{k{i + 1}}}\n")
+                f.write(f"fix_modify      {i + 3} energy yes\n")
+                var_U1 += f"f_{i + 3}/atoms/{1 - lbd} + "
         var_U1 = var_U1[:-3] + '\"\n'
         f.write(var_U1)
         f.write("\n")

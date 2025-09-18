@@ -190,8 +190,8 @@ def solidJobs(general, solid):
             pre_var_values += "Xy Xz Yz".split()
         for i in range(ntyp):  # msd
             if nab[i] > 0:
-                pre_var_names.append(f"msd{i+1}")
-                pre_var_values.append(f"c_c{i+1}[4]")
+                pre_var_names.append(f"msd{i + 1}")
+                pre_var_values.append(f"c_c{i + 1}[4]")
         depend = (pre_job_dir, pre_var_names, pre_var_values)
         sol_ti = einstein(data_in, dlbd, Tlist[0],
                           directory=f"{phdir}/einstein")

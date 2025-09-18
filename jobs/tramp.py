@@ -14,7 +14,8 @@ class tramp(lammpsJobGroup):
                  data_in,          # initial structure file in lammps format
                  Tlist,            # list of temperatures to equilibrate
                  directory,        # path to group directory
-                 nab=None,         # number of atoms of each type, [na, nb, ...],
+                 # number of atoms of each type, [na, nb, ...],
+                 nab=None,
                  # if given, change comp in data_in accordingly
                  barostat="iso",   # barostat for npt, if "none", run nvt
                  ):
@@ -69,11 +70,12 @@ class tramp(lammpsJobGroup):
         if general.mass is not None:
             if isinstance(general.mass, list):
                 for i in range(len(general.mass)):
-                    f.write(f"mass            {i+1} {general.mass[i]}\n")
+                    f.write(f"mass            {i + 1} {general.mass[i]}\n")
             else:
                 f.write(f"mass            * {general.mass}\n")
         f.write("\n")
-        f.write(f"velocity        all create {T:g} {np.random.randint(1000000)} rot yes dist gaussian\n")
+        f.write(
+            f"velocity        all create {T:g} {np.random.randint(1000000)} rot yes dist gaussian\n")
         if general.timestep is not None:
             f.write(f"timestep        {general.timestep}\n")
         f.write(f"thermo          {general.thermo}\n")
@@ -92,16 +94,17 @@ class tramp(lammpsJobGroup):
                 + f"y {general.pressure} {general.pressure} {general.Pdamp} "\
                 + f"z {general.pressure} {general.pressure} {general.Pdamp} "\
                 + self._barostat
-        f.write(f"fix             1 all npt temp {T:g} {T:g} {general.Tdamp} {baro_style}\n")
+        f.write(
+            f"fix             1 all npt temp {T:g} {T:g} {general.Tdamp} {baro_style}\n")
         if msd:
             # pre-equilibrate to account for volume change
             f.write("\n")
-            f.write(f"run             {int(0.1*general.run)}\n")
+            f.write(f"run             {int(0.1 * general.run)}\n")
             for i in range(self._ntyp):
                 if self._nab[i] > 0:
-                    f.write(f"group           g{i+1} type {i+1}\n")
-                    f.write(f"compute         c{i+1} g{i+1} msd com yes\n")
-                    thermo_style += f" c_c{i+1}[4]"
+                    f.write(f"group           g{i + 1} type {i + 1}\n")
+                    f.write(f"compute         c{i + 1} g{i + 1} msd com yes\n")
+                    thermo_style += f" c_c{i + 1}[4]"
         f.write("\n")
         f.write(f"thermo_style    {thermo_style}\n")
         f.write("thermo_modify   lost error norm yes\n")
@@ -115,7 +118,8 @@ class tramp(lammpsJobGroup):
         for T in self._Tlist:
             Tdir = f"{self._dir}/T{T:g}"
             if not os.path.isdir(Tdir):
-                raise Exception(f"Error: {Tdir} does not exist for post processing!")
+                raise Exception(
+                    f"Error: {Tdir} does not exist for post processing!")
             # if not os.path.exists(f"{Tdir}/DONE"):
             #    raise Exception("Error: job is not DONE in {Tdir} for post processing!")
             job = lammpsJob(directory=Tdir)

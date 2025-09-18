@@ -187,7 +187,7 @@ def create_lammps_supercell(system, infile, outfile, ntarget=500, eps=1.e-3):
             y = fy * ly + fz * yz
             z = fz * lz
             f.write(
-                f"{i+1:6d} {system.index(types[i])+1:4d} {x:16.6f} {y:16.6f} {z:16.6f}\n")
+                f"{i + 1:6d} {system.index(types[i]) + 1:4d} {x:16.6f} {y:16.6f} {z:16.6f}\n")
         else:
             raise Exception(f"element {typ} is not in system in {infile}!")
     f.close()
@@ -223,7 +223,27 @@ def create_triclinic_box(a, b, c, alpha, beta, gamma, radians=False):
     return lx, ly, lz, xy, xz, yz
 
 
-def create_tdb_header_nonsol(name, system, nab):
+def create_tdb_header(system, mass):
+    '''
+    create overall header of the TDB file
+    '''
+    tdb = ''
+    tdb += f"$ DATA FILE {' '.join(system)}\n"
+    tdb += "ELEMENT /-   ELECTRON_GAS              0.0000E+00  0.0000E+00  0.0000E+00!\n"
+    tdb += "ELEMENT VA   VACUUM                    0.0000E+00  0.0000E+00  0.0000E+00!\n"
+    for el, m in zip(system, mass):
+        tdb += f"ELEMENT {el} NA                          {m:.4E}  0.0000E+00  0.0000E+00!\n"
+
+    tdb += "\n"
+    tdb += " TYPE_DEFINITION % SEQ *!\n"
+    tdb += f" DEFINE_SYSTEM_DEFAULT ELEMENT {len(system)} !\n"
+    tdb += " DEFAULT_COMMAND DEF_SYS_ELEMENT VA /- !\n"
+    tdb += "\n"
+
+    return tdb.upper()
+
+
+def create_tdb_nonsol_phase(name, system, nab):
     '''
     create the TDB header for a non-solution phase.
     name, str: name of the phase
@@ -249,10 +269,10 @@ def create_tdb_header_nonsol(name, system, nab):
     for el in comp.keys():
         tdb += f"{el}:"
     tdb = tdb[:-1] + ";0) "
-    return tdb
+    return tdb.upper()
 
 
-def create_tdb_header_binsol(name, el1, el2):
+def create_tdb_binsol_phase(name, el1, el2):
     '''
     create the TDB header for a binary solution phase with one sublattice.
     name, str: name of the phase
@@ -262,16 +282,17 @@ def create_tdb_header_binsol(name, el1, el2):
     # definition of the phase
     phase = f" PHASE {name}  %  1 1.0 !\n"
     phase += f"    CONSTITUENT {name}  :{el1},{el2} : !\n\n"
+    phase = phase.upper()
 
     # params for endmembers
     end = ['', '']
-    end[0] = (f"   PARAMETER G({name},{el1};0)")
-    end[1] = f"   PARAMETER G({name},{el2};0)"
+    end[0] = f"   PARAMETER G({name},{el1};0)".upper()
+    end[1] = f"   PARAMETER G({name},{el2};0)".upper()
 
     # params for R-K coefficients L0, L1, L2, L3
     rk = [''] * 4
     for i in range(4):
-        rk[i] = f"   PARAMETER L({name},{el1},{el2};{i})"
+        rk[i] = f"   PARAMETER L({name},{el1},{el2};{i})".upper()
 
     return phase, end, rk
 
@@ -291,7 +312,8 @@ def merge_arrays(arr1, arr2, tolerance=0.001):
 
     return np.array(result)
 
-def F_idealgas (temp, rho, natom, mass, comp, constants):
+
+def F_idealgas(temp, rho, natom, mass, comp, constants):
     '''
     free energy of ideal gas;
     temp: temperature; rho: number density; natom: number of atoms;
@@ -302,13 +324,13 @@ def F_idealgas (temp, rho, natom, mass, comp, constants):
     kb, hbar, au = constants
 
     beta = 1 / (kb * temp)
-    debroglie = [np.sqrt(2 * np.pi * beta * hbar ** 2 / (m * au)) 
+    debroglie = [np.sqrt(2 * np.pi * beta * hbar ** 2 / (m * au))
                  for m in mass]
     FE = 0
     for k in range(len(comp)):
-        if(comp[k] == 0):
+        if (comp[k] == 0):
             FE += 0
         else:
-            FE += comp[k] * (3 * np.log(debroglie[k]) + np.log(rho) - 1 + np.log(comp[k]))
+            FE += comp[k] * (3 * np.log(debroglie[k]) +
+                             np.log(rho) - 1 + np.log(comp[k]))
     return 1 / beta * FE
-

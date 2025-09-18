@@ -65,7 +65,8 @@ class alchem(lammpsJobGroup):
                 kb = 8.617333262e-5
                 sigma = 1.5  # angstroms
             pair0 = lammpsPair(
-                f"ufm {5*sigma}", f"* * {kb*self._T*50} {sigma}")  # default p=50
+                # default p=50
+                f"ufm {5 * sigma}", f"* * {kb * self._T * 50} {sigma}")
             barostat = "none"  # run nvt
 
         else:
@@ -109,7 +110,7 @@ class alchem(lammpsJobGroup):
         if general.mass is not None:
             if isinstance(general.mass, list):
                 for i in range(len(general.mass)):
-                    f.write(f"mass            {i+1} {general.mass[i]}\n")
+                    f.write(f"mass            {i + 1} {general.mass[i]}\n")
             else:
                 f.write(f"mass            * {general.mass}\n")
         f.write("\n")
@@ -164,7 +165,7 @@ class alchem(lammpsJobGroup):
         dU = np.asarray(dU)
         dG = scipy.integrate.simpson(dU[:, 1], dU[:, 0])
         comp = [n / self._natom for n in self._nab]
-        if self._ref_pair is None: # UFM as ref
+        if self._ref_pair is None:  # UFM as ref
             # params for the UFM model
             if general.units == "lj":
                 sigma = 0.5  # LJ length unit
@@ -175,13 +176,13 @@ class alchem(lammpsJobGroup):
             job = lammpsJob(directory=f"{self._dir}/0")
             vol = job.sample(["Volume"])[0]
             rho = self._natom / vol
-            F_ig = F_idealgas(self._T, rho, self._natom, general.mass, 
+            F_ig = F_idealgas(self._T, rho, self._natom, general.mass,
                               comp, (kb, hbar, au))
             x = (0.5 * (np.pi * sigma * sigma) ** 1.5) * rho
             press, F0 = get_UF(p, x)
             F0 *= (kb * self._T)
             dG += (F_ig + F0 + general.pressure * vol)
-        else: # comp0 as ref
+        else:  # comp0 as ref
             m0 = general.mass[0]
             for x, m in zip(comp, general.mass):
                 if x > 0:

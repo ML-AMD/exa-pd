@@ -59,7 +59,7 @@ def process_liquid(general, liquid, write_file=True):
     else:
         kb = 8.617333262e-5
         ddT = 10
-    R = 8.3144598 # gas constant
+    R = 8.3144598  # gas constant
     Tall = np.arange(min(Tlist), max(Tlist) + 0.1 * ddT, ddT)
     tdb = ''  # entry of the liquid phase in the TDB file
     natom, ntyp = read_lmp_data(data_in)
@@ -87,7 +87,8 @@ def process_liquid(general, liquid, write_file=True):
                 n[idx[0]] += (natom - sum(n))
         compdir = f"{liq_dir}/comp{icomp}"
         if not os.path.isdir(compdir):
-            rexapd_logger.critical(f"{compdir} does not exist for post-processing.")
+            rexapd_logger.critical(
+                f"{compdir} does not exist for post-processing.")
         #  process alchem jobs
         liq_alchem = alchem(data_in, dlbd, Tmax,
                             f"{compdir}/alchem", ref_pair=ref_pair, nab=n)
@@ -105,9 +106,10 @@ def process_liquid(general, liquid, write_file=True):
             Gall = G.reshape(-1, 1)
         else:
             if ref_pair is None:
-                G0 = det_G # det_G is absolute for using UFM as ref
+                G0 = det_G  # det_G is absolute for using UFM as ref
             else:
-                G0 = det_G + Gall[-1, 0] # det_G is relative G to G(x=0) otherwise 
+                # det_G is relative G to G(x=0) otherwise
+                G0 = det_G + Gall[-1, 0]
             G = Gibbs_Helmholtz(arrT, arrH, Tlist[-1], G0, Tall)
             Gall = np.column_stack((Gall, G))
         xall[icomp] = n[comp_idx] / natom
@@ -119,9 +121,9 @@ def process_liquid(general, liquid, write_file=True):
                    np.column_stack((Tall, Gall)), fmt="%.6f", header=header)
 
     # generate TDB entry for (sub)binary system
-    # check if comp0 and comp1 belong to a sub-binary system 
+    # check if comp0 and comp1 belong to a sub-binary system
     create_tdb = True
-    binary = [None, None] 
+    binary = [None, None]
     for i in range(len(comp0)):
         if comp0[i] > comp1[i]:
             if binary[0] is None:
@@ -149,17 +151,17 @@ def process_liquid(general, liquid, write_file=True):
         G0 = np.zeros(len(Tall))
         for i in range(len(G0)):
             G0[i] = scipy.interpolate.interp1d(xall, Gall[i],
-                    kind='linear', fill_value='extrapolate')(0)
+                                               kind='linear', fill_value='extrapolate')(0)
     if xall[-1] == 1:
         G1 = Gall[:, -1]
     else:
         G1 = np.zeros(len(Tall))
         for i in range(len(G1)):
             G1[i] = scipy.interpolate.interp1d(xall, Gall[i],
-                    kind='linear', fill_value='extrapolate')(1)
-            
-    phase, end, rk = create_tdb_header_binsol("liq", binary[:2])
-    tdb += phase # phase definition in TDB
+                                               kind='linear', fill_value='extrapolate')(1)
+
+    phase, end, rk = create_tdb_binsol_phase("liq", *binary)
+    tdb += phase  # phase definition in TDB
     # create TDB entry for end member x = 0
     res = scipy.optimize.curve_fit(tlogpoly, Tall, G0, np.ones(6))
     params = res[0] * R / kb  # default unit in CALPHAD is J/mol
@@ -267,8 +269,8 @@ def process_solid(general, solid, write_file=True):
             pre_var_values += "Xy Xz Yz".split()
         for i in range(ntyp):  # msd
             if nab[i] > 0:
-                pre_var_names.append(f"msd{i+1}")
-                pre_var_values.append(f"c_c{i+1}[4]")
+                pre_var_names.append(f"msd{i + 1}")
+                pre_var_values.append(f"c_c{i + 1}[4]")
         depend = (pre_job_dir, pre_var_names, pre_var_values)
         sol_ti = einstein(
             data_in, dlbd, Tlist[0], directory=f"{phdir}/einstein")
@@ -283,7 +285,7 @@ def process_solid(general, solid, write_file=True):
         res = scipy.optimize.curve_fit(tlogpoly, Tall, Gall, np.ones(6))
         params = res[0]
         # create TDB entry
-        tdb += create_tdb_header_nonsol(name, general.system, nab)
+        tdb += create_tdb_nonsol_phase(name, general.system, nab)
         tdb += f"{Tlist[0]:g} {params[0]:+.12g}{params[1]:+.12g}*T\n"
         tdb += f"   {params[2]:+.12g}*T*LN(T){params[3]:+.12g}*T**2{params[4]:+.12g}*T**(-1)\n"
         tdb += f"   {params[5]:+.12g}*T**3; {Tlist[-1]:g} N !\n"

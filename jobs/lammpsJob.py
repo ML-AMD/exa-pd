@@ -204,7 +204,7 @@ def hybridPair(pair0, pair1, lbd):
     output:
           string to be included in Lammps script
     '''
-    cmd = f"pair_style\thybrid/scaled {1-lbd} {pair0._name} {pair0._param} {lbd} {pair1._name} {pair1._param}\n"
+    cmd = f"pair_style\thybrid/scaled {1 - lbd} {pair0._name} {pair0._param} {lbd} {pair1._name} {pair1._param}\n"
     if pair0._name == pair1._name:
         name0 = pair0._name + " 1"
         name1 = pair1._name + " 2"
@@ -231,8 +231,8 @@ def reset_types(nab, natom):
     cmd += f"set             group g1 type 1\n"
     for i in range(1, len(nab)):
         if nab[i] > 0:
-            cmd += f"group           g{i+1} id <> {ntot+1} {ntot+nab[i]}\n"
-            cmd += f"set             group g{i+1} type {i+1}\n"
+            cmd += f"group           g{i + 1} id <> {ntot + 1} {ntot + nab[i]}\n"
+            cmd += f"set             group g{i + 1} type {i + 1}\n"
             ntot += nab[i]
     return cmd
 
