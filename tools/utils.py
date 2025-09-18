@@ -221,10 +221,12 @@ def create_triclinic_box(a, b, c, alpha, beta, gamma, radians=False):
     yz = c * (cos_alpha - cos_beta * cos_gamma) / sin_gamma
 
     return lx, ly, lz, xy, xz, yz
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/fz_refactor
+
+<< << << < HEAD
+
+== == == =
+>>>>>> > origin / fz_refactor
 
 
 def create_tdb_header(system, mass):

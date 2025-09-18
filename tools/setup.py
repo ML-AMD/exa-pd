@@ -14,27 +14,6 @@ def liquidJobs(general, liquid):
     and liquid sections from the input JSon file.
     '''
     # read input
-<<<<<<< HEAD
-    try:
-        mode = liquid["mode"]
-    except BaseException:
-        mode = "scratch"
-    if mode not in ["scratch", "restart"]:
-        return []  # do nothing
-    liq_dir = f"{general.proj_dir}/liquid"
-    if not os.path.isdir(liq_dir):
-        if mode == "scratch":
-            try:
-                os.mkdir(liq_dir)
-            except BaseException:
-                print(f"Error: cannnot create directory {liq_dir}")
-                sys.exit(1)
-        else:
-            raise Exception(f"{liq_dir} does not exist for restarting job!")
-    data_in = os.path.abspath(liquid["data_in"])
-    if not os.path.exists(data_in):
-        raise Exception(f"Error file {data_in} doesn't exist!")
-=======
     liq_dir = f"{general.proj_dir}/liquid"
     if not os.path.isdir(liq_dir):
         try:
@@ -44,7 +23,6 @@ def liquidJobs(general, liquid):
     data_in = os.path.abspath(liquid["data_in"])
     if not os.path.exists(data_in):
         exapd_logger.critical(f"File {data_in} does not exist.")
->>>>>>> origin/fz_refactor
 
     comp0 = liquid["initial_comp"]
     comp1 = liquid["final_comp"]
@@ -53,32 +31,11 @@ def liquidJobs(general, liquid):
     comp1 = np.array(comp1) / sum(comp1)
     try:
         ncomp = liquid["ncomp"]
-<<<<<<< HEAD
-    except BaseException:
-=======
     except KeyError:
->>>>>>> origin/fz_refactor
         ncomp = 10
     try:
         ref_pair_style = liquid["ref_pair_style"]
         ref_pair_coeff = liquid["ref_pair_coeff"]
-<<<<<<< HEAD
-        ref_pair = lammpsPair(ref_pair_style, ref_pair_coeff)
-    except BaseException:
-        ref_pair = None
-    try:
-        dlbd = liquid["dlbd"]
-    except BaseException:
-        dlbd = 0.05
-    Tmin = liquid["Tmin"]
-    Tmax = liquid["Tmax"]
-    dT = liquid["dT"]
-    Tlist = np.arange(Tmin, Tmax + 0.1 * dT, dT)
-    liq_jobs = []
-    natom, ntyp = read_lmp_data(data_in)
-    n0 = natom * np.asarray(comp0)
-    n1 = natom * np.asarray(comp1)
-=======
         gen_ref_pair = lammpsPair(ref_pair_style, ref_pair_coeff)
     except KeyError:
         gen_ref_pair = None
@@ -105,7 +62,6 @@ def liquidJobs(general, liquid):
     natom, ntyp = read_lmp_data(data_in)
     n0 = natom * comp0
     n1 = natom * comp1
->>>>>>> origin/fz_refactor
     dn = (n1 - n0) / ncomp
     for icomp in range(ncomp + 1):
         if icomp == 0:
@@ -123,19 +79,6 @@ def liquidJobs(general, liquid):
                 n[idx[0]] += (natom - sum(n))
         compdir = f"{liq_dir}/comp{icomp}"
         if not os.path.isdir(compdir):
-<<<<<<< HEAD
-            if mode == "scratch":
-                try:
-                    os.mkdir(compdir)
-                except BaseException:
-                    print(f"Error: cannot create directory {compdir}!")
-                    sys.exit(1)
-            else:
-                raise Exception(f"{compdir} does not exist for restarting job!")
-        # set up alchem jobs
-        liq_alchem = alchem(data_in, dlbd, Tmax, f"{compdir}/alchem", mode, ref_pair, n)
-        res = liq_alchem.setup(general)
-=======
             try:
                 os.mkdir(compdir)
             except Exception as e:
@@ -152,7 +95,6 @@ def liquidJobs(general, liquid):
         liq_alchem = alchem(data_in, dlbd, Tmax,
                             f"{compdir}/alchem", ref_pair, n)
         res = liq_alchem.setup(general, depend)
->>>>>>> origin/fz_refactor
         liq_jobs += liq_alchem.get_joblist()
         # set up T-ramping jobs
         liq_tramp = tramp(data_in, Tlist, f"{compdir}/tramp", n)

@@ -4,7 +4,6 @@ import sys
 import os
 
 
-
 class lammpsJob:
     '''
     define a lammps job with an input script and all necessary data files.
