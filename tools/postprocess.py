@@ -15,7 +15,7 @@ def process_liquid(general, liquid, write_file=True):
     '''
     liq_dir = f"{general.proj_dir}/liquid"
     if not os.path.isdir(liq_dir):
-        rexapd_logger.critical(
+        exapd_logger.critical(
             f"{liq_dir} does not exist for post-processing!")
     data_in = os.path.abspath(liquid["data_in"])
     comp0 = liquid["initial_comp"]

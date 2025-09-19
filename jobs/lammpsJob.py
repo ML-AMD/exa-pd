@@ -100,16 +100,16 @@ class lammpsPair:
 
     def __init__(self, pair_style, pair_coeff):
         values = pair_style.split()
-        self._cmd = "pair_style\t" + pair_style + '\n'
         self._name = values[0]  # name of the pair style
         if len(values) > 1:
             for i in range(1, len(values)):
-                if os.path.exists(values[i]):
+                if os.path.isfile(values[i]):
                     values[i] = os.path.abspath(values[i])
             # other parameters for the pair style
             self._param = ' '.join(values[1:])
         else:
             self._param = ''
+        self._cmd = f"pair_style\t{self._name} {self._param}\n"
         if isinstance(pair_coeff, list):
             values = pair_coeff
         else:
@@ -117,16 +117,16 @@ class lammpsPair:
         self._numTyp = []  # list of numeric types for each pair_coeff
         self._coeff = []  # list of coeff for each pair_coeff
         for line in values:
-            self._cmd += "pair_coeff\t" + line + '\n'
             words = line.split()
             self._numTyp.append(' '.join(words[:2]))
             if len(words) > 2:
                 for i in range(2, len(words)):
-                    if os.path.exists(words[i]):
+                    if os.path.isfile(words[i]):
                         words[i] = os.path.abspath(words[i])
                 self._coeff.append(' '.join(words[2:]))
             else:
                 self._coeff.append('')
+            self._cmd += f"pair_coeff\t{self._numTyp[-1]} {self._coeff[-1]}\n"
 
 
 class lammpsPara:
@@ -139,7 +139,8 @@ class lammpsPara:
         self.system = general["system"].split()
         try:
             self.mass = general["mass"]
-            if isinstance(self.mass, list) and len(self.mass) != len(self.system):
+            if isinstance(self.mass, list) and len(
+                    self.mass) != len(self.system):
                 print("Error: number of elements in mass and system doesn't match!")
                 sys.exit(1)
         except KeyError:
@@ -204,7 +205,13 @@ def hybridPair(pair0, pair1, lbd):
     output:
           string to be included in Lammps script
     '''
-    cmd = f"pair_style\thybrid/scaled {1 - lbd} {pair0._name} {pair0._param} {lbd} {pair1._name} {pair1._param}\n"
+    cmd = f"pair_style\thybrid/scaled {
+        1 -
+        lbd} {
+        pair0._name} {
+            pair0._param} {lbd} {
+                pair1._name} {
+                    pair1._param}\n"
     if pair0._name == pair1._name:
         name0 = pair0._name + " 1"
         name1 = pair1._name + " 2"
@@ -231,7 +238,10 @@ def reset_types(nab, natom):
     cmd += f"set             group g1 type 1\n"
     for i in range(1, len(nab)):
         if nab[i] > 0:
-            cmd += f"group           g{i + 1} id <> {ntot + 1} {ntot + nab[i]}\n"
+            cmd += f"group           g{i +
+                                       1} id <> {ntot +
+                                                 1} {ntot +
+                                                     nab[i]}\n"
             cmd += f"set             group g{i + 1} type {i + 1}\n"
             ntot += nab[i]
     return cmd
