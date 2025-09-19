@@ -132,6 +132,6 @@ class sli_simulator(lammpsJobGroup):
         f.write("\n")
         f.write("# release the whole system using uni-axial barostat\n")
         f.write(
-            f"fix             4 all npt temp {T:g} {T:g} {general.Tdamp} {general.pressure} {general.pressure} {self._orient}\n")
+            f"fix             4 all npt temp {T:g} {T:g} {general.Tdamp} {self._orient} {general.pressure} {general.pressure} {general.Pdamp}\n")
         f.write(f"run             {general.run}\n")
         f.close()
