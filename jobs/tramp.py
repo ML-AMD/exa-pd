@@ -14,15 +14,14 @@ class tramp(lammpsJobGroup):
                  data_in,          # initial structure file in lammps format
                  Tlist,            # list of temperatures to equilibrate
                  directory,        # path to group directory
-                 mode="scratch",   # scratch, restart or process
-                 nab=None,         # number of atoms of each type, [na, nb, ...],
+                 nab=None,
+                 # number of atoms of each type, [na, nb, ...],
                  # if given, change comp in data_in accordingly
                  barostat="iso",   # barostat for npt, if "none", run nvt
                  ):
         super().__init__(directory)
         self._datain = data_in
         self._Tlist = Tlist
-        self._mode = mode
         self._barostat = barostat
         if nab is not None:
             natom, ntyp = read_lmp_data(self._datain)
@@ -41,25 +40,14 @@ class tramp(lammpsJobGroup):
         if msd=Ture, calculate msd for each elements.
         '''
         natom = self._natom
-        H_of_T = []  # only used in post processing
         for T in self._Tlist:
             Tdir = f"{self._dir}/T{T:g}"
             scriptFile = f"{Tdir}/lmp.in"
-            if self._mode == "scratch":
-                job = lammpsJob(directory=Tdir,
-                                scriptFile=scriptFile)
+            job = lammpsJob(directory=Tdir,
+                            scriptFile=scriptFile)
+            if not os.path.exists(scriptFile):
                 self.write_script(job._script, general, T, boxdims, msd)
-                self._jobList.append(job)
-            elif self._mode == "restart":
-                if not os.path.isdir(Tdir):
-                    raise Exception(f"Error: {Tdir} does not exist for restart job!")
-                if os.path.exists(f"{Tdir}/done"):
-                    continue
-                if not os.path.exists(scriptFile):
-                    raise Exception(f"Error: lmp script {scriptFile} does not exist for restart job!")
-                job = lammpsJob(directory=Tdir, scriptFile=scriptFile)
-                self._jobList.append(job)
-        return 0
+            self._jobList.append(job)
 
     def write_script(self, scriptFile, general, T, boxdims, msd):
         f = open(scriptFile, 'wt')
@@ -86,7 +74,8 @@ class tramp(lammpsJobGroup):
             else:
                 f.write(f"mass            * {general.mass}\n")
         f.write("\n")
-        f.write(f"velocity        all create {T:g} {np.random.randint(1000000)} rot yes dist gaussian\n")
+        f.write(
+            f"velocity        all create {T:g} {np.random.randint(1000000)} rot yes dist gaussian\n")
         if general.timestep is not None:
             f.write(f"timestep        {general.timestep}\n")
         f.write(f"thermo          {general.thermo}\n")
@@ -105,7 +94,8 @@ class tramp(lammpsJobGroup):
                 + f"y {general.pressure} {general.pressure} {general.Pdamp} "\
                 + f"z {general.pressure} {general.pressure} {general.Pdamp} "\
                 + self._barostat
-        f.write(f"fix             1 all npt temp {T:g} {T:g} {general.Tdamp} {baro_style}\n")
+        f.write(
+            f"fix             1 all npt temp {T:g} {T:g} {general.Tdamp} {baro_style}\n")
         if msd:
             # pre-equilibrate to account for volume change
             f.write("\n")
@@ -128,9 +118,10 @@ class tramp(lammpsJobGroup):
         for T in self._Tlist:
             Tdir = f"{self._dir}/T{T:g}"
             if not os.path.isdir(Tdir):
-                raise Exception(f"Error: {Tdir} does not exist for post processing!")
-            # if not os.path.exists(f"{Tdir}/done"):
-            #    raise Exception("Error: job is not done in {Tdir} for post processing!")
+                raise Exception(
+                    f"Error: {Tdir} does not exist for post processing!")
+            # if not os.path.exists(f"{Tdir}/DONE"):
+            #    raise Exception("Error: job is not DONE in {Tdir} for post processing!")
             job = lammpsJob(directory=Tdir)
             [T, H] = job.sample(varList=["Temp", "Enthalpy"],
                                 logfile="log.lammps")

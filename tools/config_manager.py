@@ -16,7 +16,8 @@ class ConfigManager:
             with open(args.config, "r") as f:
                 self._config = json.load(f)
         except Exception as e:
-            print(f"Error reading config file {args.config}: {e}", file=sys.stderr)
+            print(
+                f"Error reading config file {args.config}: {e}", file=sys.stderr)
             sys.exit(1)
 
     def __getitem__(self, key):

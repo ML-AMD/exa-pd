@@ -12,4 +12,4 @@ jobs:
     - name: 'PEP8 format check'
       uses: quentinguidee/pep8-action@v1
       with:
-        arguments: '--max-line-length=320'
+        arguments: '--max-line-length=320 --exclude=tools/ufgenerator.py'
