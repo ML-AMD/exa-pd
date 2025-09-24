@@ -43,6 +43,9 @@ class lammpsJob:
     def get_depend(self):
         return self._depend
 
+    def set_arch(self, arch):
+        self._arch = arch
+
     def sample(self, varList=["PotEng"], logfile="log.lammps", skip=0.2):
         '''
         sample the average for a list of variables from LAMMPS output
@@ -141,8 +144,8 @@ class lammpsPara:
             self.mass = general["mass"]
             if isinstance(self.mass, list) and len(
                     self.mass) != len(self.system):
-                print("Error: number of elements in mass and system doesn't match!")
-                sys.exit(1)
+                exapd_logger.critical(
+                       "error: number of elements in mass and system doesn't match!")
         except KeyError:
             self.mass = None  # has to be provided in data.in or potential file
         try:
@@ -205,13 +208,7 @@ def hybridPair(pair0, pair1, lbd):
     output:
           string to be included in Lammps script
     '''
-    cmd = f"pair_style\thybrid/scaled {
-        1 -
-        lbd} {
-        pair0._name} {
-            pair0._param} {lbd} {
-                pair1._name} {
-                    pair1._param}\n"
+    cmd = f"pair_style\thybrid/scaled {1 - lbd} {pair0._name} {pair0._param} {lbd} {pair1._name} {pair1._param}\n"
     if pair0._name == pair1._name:
         name0 = pair0._name + " 1"
         name1 = pair1._name + " 2"
@@ -238,10 +235,7 @@ def reset_types(nab, natom):
     cmd += f"set             group g1 type 1\n"
     for i in range(1, len(nab)):
         if nab[i] > 0:
-            cmd += f"group           g{i +
-                                       1} id <> {ntot +
-                                                 1} {ntot +
-                                                     nab[i]}\n"
+            cmd += f"group           g{i + 1} id <> {ntot + 1} {ntot + nab[i]}\n"
             cmd += f"set             group g{i + 1} type {i + 1}\n"
             ntot += nab[i]
     return cmd

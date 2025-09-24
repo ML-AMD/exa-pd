@@ -101,11 +101,7 @@ class sli_simulator(lammpsJobGroup):
         if self._barostat == "none":
             baro_style = ''
         elif "couple" not in self._barostat:
-            baro_style = f"{
-                self._barostat} {
-                general.pressure} {
-                general.pressure} {
-                general.Pdamp}"
+            baro_style = f"{self._barostat} {general.pressure} {general.pressure} {general.Pdamp}"
         else:
             baro_style = f"x {general.pressure} {general.pressure} {general.Pdamp} "\
                 + f"y {general.pressure} {general.pressure} {general.Pdamp} "\
