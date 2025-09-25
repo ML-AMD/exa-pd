@@ -142,8 +142,7 @@ class lammpsPara:
         self.system = general["system"].split()
         try:
             self.mass = general["mass"]
-            if isinstance(self.mass, list) and len(
-                    self.mass) != len(self.system):
+            if isinstance(self.mass, list) and len(self.mass) != len(self.system):
                 exapd_logger.critical(
                        "error: number of elements in mass and system doesn't match!")
         except KeyError:

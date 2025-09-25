@@ -12,16 +12,12 @@ class PerlmutterConfig(Config):
             max_workers_per_node=4,
             available_accelerators=4,
             provider=SlurmProvider(
-                account=run_config["gpu_account"],
-                qos=run_config["qos"],
-                constraint="gpu",
                 init_blocks=0,
-                min_blocks=1,
+                min_blocks=0,
                 max_blocks=10,
                 nodes_per_block=run_config["ngpu"],
                 launcher=SrunLauncher(),
-                scheduler_options="#SBATCH --gpus-per-node=4",
-                walltime='24:00:00',
+                scheduler_options="\n".join(run_config["gpu_schedule_option"]),
             )
         )
 
@@ -30,15 +26,12 @@ class PerlmutterConfig(Config):
             max_workers_per_node=4,
             cores_per_worker=64,
             provider=SlurmProvider(
-                account=run_config["cpu_account"],
-                qos=run_config["qos"],
-                constraint="cpu",
                 init_blocks=0,
-                min_blocks=1,
+                min_blocks=0,
                 max_blocks=10,
                 nodes_per_block=run_config["ncpu"],
                 launcher=SingleNodeLauncher(),
-                walltime='24:00:00',
+                scheduler_options="\n".join(run_config["cpu_schedule_option"]),
             )
         )
 
