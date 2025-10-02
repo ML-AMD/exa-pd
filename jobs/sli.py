@@ -7,7 +7,7 @@ import sys
 
 class sli_simulator(lammpsJobGroup):
     '''
-    set up lammps jobs for temperature ramping for any phae (liquid or solid)
+    set up lammps jobs for solid-liquid interface simulations 
     '''
 
     def __init__(self,
@@ -31,12 +31,7 @@ class sli_simulator(lammpsJobGroup):
         self._ntyp = ntyp
         self._nab = nab * replicate
 
-    def setup(self, general, boxdims=False, msd=False):
-        '''
-        if boxdims=True, output detailed box dimensions,
-        otherwise only output volume.
-        if msd=Ture, calculate msd for each elements.
-        '''
+    def setup(self, general):
         natom = self._natom
         for T in self._Tlist:
             Tdir = f"{self._dir}/T{T:g}"
@@ -44,10 +39,10 @@ class sli_simulator(lammpsJobGroup):
             job = lammpsJob(directory=Tdir,
                             scriptFile=scriptFile)
             if not os.path.exists(scriptFile):
-                self.write_script(job._script, general, T, boxdims, msd)
+                self.write_script(job._script, general, T)
             self._jobList.append(job)
 
-    def write_script(self, scriptFile, general, T, boxdims, msd):
+    def write_script(self, scriptFile, general, T):
         f = open(scriptFile, 'wt')
         f.write(f"#  SLI simulation for T = {T}\n")
         f.write("\n")
@@ -91,7 +86,6 @@ class sli_simulator(lammpsJobGroup):
         if general.timestep is not None:
             f.write(f"timestep        {general.timestep}\n")
         f.write(f"thermo          {general.thermo}\n")
-        thermo_style = "custom step temp etotal press vol pe"
         f.write(f"thermo_style    custom step temp etotal press vol pe\n")
         f.write("thermo_modify   lost error norm yes\n")
         f.write("\n")
@@ -123,8 +117,12 @@ class sli_simulator(lammpsJobGroup):
         f.write("# cool the liquid side\n")
         f.write(
             f"fix             3 liquid nvt temp {self._Tmelt:g} {T:g} {general.Tdamp}\n")
-        f.write(f"run             {int(0.05 * general.run)}\n")
+        f.write(f"run             {int(0.005 * general.run)}\n")
         f.write("unfix           3\n")
+        f.write("\n")
+        f.write("# reset velocity to remove drifting\n")
+        f.write(
+            f"velocity        all create {T:g} {np.random.randint(1000000)} rot yes dist gaussian\n")
         f.write("\n")
         f.write("# release the whole system using uni-axial barostat\n")
         f.write(
