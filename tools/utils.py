@@ -52,7 +52,7 @@ def get_lammps_barostat(data_in, eps=1e-3):
     '''
     determine what barostat to use. return tri if xy xz yz in file
     data_in: input lammps file
-    eps: tolerance for lattice parameters 
+    eps: tolerance for lattice parameters
     '''
     if not os.path.exists(data_in):
         exapd_logger.critical(f"{data_in} does not exist.")
@@ -96,7 +96,7 @@ def create_lammps_supercell(system, infile, outfile, ntarget=500, eps=1.e-3):
     infile: crystal sturcute file
     outfile: path to output lammps file
     ntarget: approximate number of atoms in the lammps file
-    eps: tolerance for lattice parameters 
+    eps: tolerance for lattice parameters
     '''
     from ase.io import read, write
     from ase.io.lammpsdata import write_lammps_data
