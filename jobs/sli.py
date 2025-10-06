@@ -7,7 +7,7 @@ import sys
 
 class sli_simulator(lammpsJobGroup):
     '''
-    set up lammps jobs for solid-liquid interface simulations 
+    set up lammps jobs for solid-liquid interface simulations
     '''
 
     def __init__(self,
