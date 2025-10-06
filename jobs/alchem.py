@@ -18,8 +18,8 @@ class alchem(lammpsJobGroup):
                  T,                # temperature
                  directory,        # path to group directory
                  ref_pair=None,    # reference pair style/coeff for TI
-                 # number of atoms of each type, [na, nb, ...],
                  nab=None,
+                 # number of atoms of each type, [na, nb, ...],
                  # if given, change comp in data_in accordingly
                  barostat="iso",   # barostat for npt, if "none", run nvt
                  ):
@@ -64,9 +64,7 @@ class alchem(lammpsJobGroup):
             elif general.units == "metal":
                 kb = 8.617333262e-5
                 sigma = 1.5  # angstroms
-            pair0 = lammpsPair(
-                # default p=50
-                f"ufm {5 * sigma}", f"* * {kb * self._T * 50} {sigma}")
+            pair0 = lammpsPair(f"ufm {5 * sigma}", f"* * {kb * self._T * 50} {sigma}")
             barostat = "none"  # run nvt
 
         else:
