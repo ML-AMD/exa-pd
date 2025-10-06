@@ -23,7 +23,7 @@
 			"#SBATCH -A m4802",
                         "#SBATCH -q premium"
                 ],
-		"gpu_exe" : "/global/homes/z/zye/lammps/src/lmp_serial -sf gpu -pk gpu 1",
+		"gpu_exe" : "/path/to/lmp_serial -sf gpu -pk gpu 1",
 		"cpu_exe" : "lmp",
 		"parsl_config" : "perlmutter"
 	},
