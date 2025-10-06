@@ -11,6 +11,8 @@ Exa-pd is a highly parallelizable workflow for constructing multi-element phase 
 This package requires:
 - python >= 3.10
 - parsl >= 2025.3.24
+- numpy >= 2.0
+- scipy >= 1.0.0
 - ase >= 3.24.0
 - sphinx >= 7.1.2
 - sphinx_rtd_theme >= 3.0.2
@@ -23,7 +25,7 @@ conda activate amd_env
 ```
 Additionally:
 - Ensure you have a working [LAMMPS](https://www.lammps.org/) installation.
-- Ensure you have prepared the crystal structures for solid phases (line compounds) for free energy calculations in the format of Crystallographic Information File (CIF) or Vienna Ab initio Simulation Package (VASP). 
+- Ensure you have prepared the crystal structures for solid phases for free energy calculations in the format of Crystallographic Information File (CIF) or Vienna Ab initio Simulation Package (VASP). 
 - Create a json file that specifies all the input parameters for exa-PD. See for example [configs/input.json](configs/input.json).
 
 ## Register a new Parsl configuration
@@ -51,5 +53,3 @@ Copyright 2025. Iowa State University. All rights reserved. This software was pr
 
 © 2025. Triad National Security, LLC. All rights reserved.
 This program was produced under U.S. Government contract 89233218CNA000001 for Los Alamos National Laboratory (LANL), which is operated by Triad National Security, LLC for the U.S. Department of Energy/National Nuclear Security Administration. All rights in the program are reserved by Triad National Security, LLC, and the U.S. Department of Energy/National Nuclear Security Administration. The Government is granted for itself and others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide license in this material to reproduce, prepare. derivative works, distribute copies to the public, perform publicly and display publicly, and to permit others to do so.
-
-  

@@ -16,7 +16,7 @@ class PerlmutterConfig(Config):
                 qos=run_config["qos"],
                 constraint="gpu",
                 init_blocks=0,
-                min_blocks=1,
+                min_blocks=0,
                 max_blocks=1,
                 nodes_per_block=run_config["ngpu"],
                 launcher=SrunLauncher(),

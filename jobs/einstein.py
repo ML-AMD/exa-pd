@@ -3,6 +3,7 @@ import os
 import scipy
 from jobs.lammpsJob import *
 from tools.utils import *
+from tools.logging_config import exapd_logger
 
 
 class einstein(lammpsJobGroup):
@@ -150,8 +151,8 @@ class einstein(lammpsJobGroup):
         for ilbd, lbd in enumerate(self._lbdList):
             jobdir = f"{self._dir}/{ilbd}"
             if not os.path.isdir(jobdir):
-                raise Exception(
-                    f"Error: {jobdir} does not exist for post processing!")
+                exapd_logger.critical(
+                    f"{jobdir} does not exist for post processing.")
             # if not os.path.exists(f"{jobdir}/DONE"):
             #    raise Exception(f"Error: job is not DONE in {jobdir} for post processing!")
             job = lammpsJob(directory=jobdir)

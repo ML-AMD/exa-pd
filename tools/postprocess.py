@@ -15,7 +15,7 @@ def process_liquid(general, liquid, write_file=True):
     '''
     liq_dir = f"{general.proj_dir}/liquid"
     if not os.path.isdir(liq_dir):
-        rexapd_logger.critical(
+        exapd_logger.critical(
             f"{liq_dir} does not exist for post-processing!")
     data_in = os.path.abspath(liquid["data_in"])
     comp0 = liquid["initial_comp"]
@@ -237,9 +237,12 @@ def process_solid(general, solid, write_file=True):
             exapd_logger.critical("Tlist cannot be created for solid.")
     # create a finer T-mesh for smooth free energy
     if general.units == "lj":
+        kb = 1
         ddT = 0.01
     else:
+        kb = 8.617333262e-5
         ddT = 10
+    R = 8.3144598  # gas constant
     Tall = np.arange(min(Tlist), max(Tlist) + 0.1 * ddT, ddT)
     tdb = ''  # entries for solid phases in the TDB file
     for ph in phases:
@@ -283,7 +286,7 @@ def process_solid(general, solid, write_file=True):
                        header=f"Gibbs free energy of the {name} phase\n   T      G")
         # fitting to log-poly function
         res = scipy.optimize.curve_fit(tlogpoly, Tall, Gall, np.ones(6))
-        params = res[0]
+        params = res[0] * R / kb  # default unit in CALPHAD is J/mol
         # create TDB entry
         tdb += create_tdb_nonsol_phase(name, general.system, nab)
         tdb += f"{Tlist[0]:g} {params[0]:+.12g}{params[1]:+.12g}*T\n"

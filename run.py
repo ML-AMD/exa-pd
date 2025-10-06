@@ -40,8 +40,6 @@ if __name__ == '__main__':
         except Exception as e:
             exapd_logger.critical(f"{e}: Setting up solid jobs failed")
 
-    print(len(jobs))
-    exit(1)
     # launch jobs
     jobs.sort(key=lambda job: job._priority)
     parsl_job_dict = {}

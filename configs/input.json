@@ -1,47 +1,57 @@
 {
 	"general" : {
-		"comments" : "Al-Sm at with xSm<=0.25",
-		"system" : "Al Sm",
-		"mass" : [26.982, 150.36],
-		"dir" : "./PD",
+		"system" : "Cu Zr",
+		"mass" : [63.546, 91.224],
+		"dir" : "./test",
 		"pair_style" : "eam/fs",
-		"pair_coeff" : "* * /pscratch/sd/f/fzhang/MD/AlSm-PD/v4_1_Al3Sm.eam.fs Al Sm"
+		"pair_coeff" : "* * ./example/v10_5_CuZr_B2.eam.fs Cu Zr",
+		"run" : 50000
 	},
 	"run" : {
-                "ngpu" : 1,
-                "ncpu" : 1,
-                "gpu_account" : "m4802",
-                "cpu_account" : "m4802",
-                "qos" : "premium",
-                "cpu_exe" : "lmp",
-                "gpu_exe" : "/global/homes/f/fzhang/install/lammps/src/lmp_gpu_serial -sf gpu -pk gpu 1",
-                "parsl_config" : "perlmutter_single_alloc"
-        },
+		"ngpu" : 2,
+		"ncpu" : 2,
+		"gpu_schedule_option" : [
+			"#SBATCH -C gpu",
+			"#SBATCH -t 01:00:00",
+			"#SBATCH -A m4802",
+			"#SBATCH --gpus-per-node=4",
+			"#SBATCH -q premium"
+		],
+		"cpu_schedule_option" : [
+                        "#SBATCH -C cpu",
+                        "#SBATCH -t 01:00:00",
+			"#SBATCH -A m4802",
+                        "#SBATCH -q premium"
+                ],
+		"gpu_exe" : "/path/to/lmp_serial -sf gpu -pk gpu 1",
+		"cpu_exe" : "lmp",
+		"parsl_config" : "perlmutter"
+	},
 	"solid" : {
 		"phases" : [
-			"fcc.cif",
-			"Al3Sm.cif"
+			"./phases/Cu.cif",
+			"./phases/Zr3Cu8.poscar",
+			"./phases/Zr7Cu10.cif",
+			"./phases/Zr2Cu.poscar",
+			"./phases/ZrCu.cif",
+			"./phases/Zr.poscar"
 		],
-		"Tmin" : 700,
+		"Tmin" : 300,
 		"Tmax" : 1500,
-		"dT" : 50
+		"dT" : 50,
+		"Tlist" : [2000],
+		"ntarget" : 4000
 	},
 	"liquid" : {
-		"data_in" : "./data.in",
+		"data_in" : "./example/liq.lammps",
 		"initial_comp" : [1, 0],
-		"final_comp" : [0.75, 0.25],
-		"ncomp" : 5,
+		"final_comp" : [0, 1],
+		"ncomp" : 10,
 		"ref_pair_style" : "eam/fs",
-		"ref_pair_coeff" : "* * /pscratch/sd/f/fzhang/MD/AlSm-PD/v4_1_Al3Sm.eam.fs Al Al",
+		"ref_pair_coeff" : "* * ./example/v10_5_CuZr_B2.eam.fs Cu Cu",
 		"dlbd" : 0.05,
 		"Tmin" : 700,
-		"Tmax" : 1500,
+		"Tmax" : 2000,
 		"dT" : 50
-	},
-	"sli" : {
-		"phase" : "fcc",
-		"Tmin" : 1.2,
-		"Tmax" : 1.5,
-		"dT" : 0.05
 	}
 }

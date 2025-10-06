@@ -26,7 +26,7 @@ Start by cloning the `exa-PD` repository:
 3. Prepare the Data and LAMMPS Setup
 -----------------------------------
 
-Ensure you have a working `LAMMPS <https://www.lammps.org/>`_ installation. If you will be using a neural network potential (NNP), you will also need an interface for the NNP in LAMMPS. For example, if you use a NNP trained by DeepMD-kit, you will need to install `DeepMD-kit <https://github.com/deepmodeling/deepmd-kit>`_ and have LAMMPS compiled with USER-DP package enabled.
+Ensure you have a working `LAMMPS <https://www.lammps.org/>`_ installation. If you will be using a neural network potential (NNP), make sure that the necessary package supporting the NNP is installed in LAMMPS. For example, if you use a NNP trained by DeepMD-kit, you will need to install `DeepMD-kit <https://github.com/deepmodeling/deepmd-kit>`_ and have LAMMPS compiled with USER-DP package enabled. You can also use the pre-compiled lmp executable that ususally comes with the DeepMD-kit installation.
 
 Next, copy the folder that contains the crystal structures of the Cu-Zr solid phases:
 
@@ -50,7 +50,7 @@ Start by copying the default Perlmutter configuration:
 Then edit `my_perlmutter.py` and `config_registry.py`:
 
 a. Change the registration name
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 At the top of `config_registry.py`, update `CONFIG_REGISTRY` to reflect the new config name. This value **have to match** the value you will set in your JSON config file (the ``run`` field).
 
@@ -68,7 +68,7 @@ At the top of `config_registry.py`, update `CONFIG_REGISTRY` to reflect the new 
 
 
 b. Update each executor
-~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 
 The Perlmutter configuration defines **two separate executors**: one that runs on **GPU nodes** and the other on **CPU nodes**
 
@@ -101,8 +101,8 @@ Edit the following fields in `my_input.json`:
 - ``cpu_exe:`` The executable command or absolute path to run LAMMPS on CPU resources.
 - ``parsl_config:`` The Parsl configuration profile that specifies how jobs are launched and resources are allocated. This value **have to match** the value in `config_registry.py` (e.g., "my_perlmutter")
 - ``qos:`` The quality-of-service (QOS) flag to control scheduling priority (e.g., "regular", "premium").
-- ``data_in:`` ???
-- ``ref_pair_coeff:`` The pair coefficient defining the reference system. The path to the potential file should be changed to the absolute path.
+- ``data_in:`` Input data file for the liquid structure in the atom style of the LAMMPS data format.  
+- ``ref_pair_style and ref_pair_ceoff:`` The pair style and coefficient defining the reference system.
 
 ----
 
@@ -115,7 +115,3 @@ Run the full exa-PD workflow from a login node of Perlmutter:
 
    export PYTHONPATH=$(pwd):$PYTHONPATH
    python run.py --config configs/my_input.json
-
-
-
-

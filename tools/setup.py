@@ -2,6 +2,7 @@ from jobs.lammpsJob import *
 from jobs.alchem import *
 from jobs.einstein import *
 from jobs.tramp import *
+from jobs.sli import *
 from tools.logging_config import exapd_logger
 from tools.utils import merge_arrays
 import os
@@ -156,7 +157,6 @@ def solidJobs(general, solid):
                 os.mkdir(phdir)
             except Exception as e:
                 exapd_logger.critical(f"{e}: Cannot create directory {phdir}.")
-        # set up Frankel-Ladd jobs
         if form == "lammps":
             data_in = ph_file
             barostat = get_lammps_barostat(data_in)
@@ -198,3 +198,85 @@ def solidJobs(general, solid):
         res = sol_ti.setup(general, barostat, depend)
         sol_jobs += sol_ti.get_joblist()
     return sol_jobs
+
+
+def sliJobs(general, sli):
+    '''
+    set up SLI jobs, taking input from the general and sli
+    sections from the input JSon file.
+    '''
+    # read input
+    sli_dir = f"{general.proj_dir}/sli"
+    if not os.path.isdir(sli_dir):
+        try:
+            os.mkdir(sli_dir)
+        except Exception as e:
+            exapd_logger.critical(f"{e}: Cannnot create directory {sli_dir}")
+
+    phases = sli["phases"]
+    try:
+        Tlist = np.sort(sli["Tlist"])
+    except KeyError:
+        Tlist = None
+    try:
+        Tmin = sli["Tmin"]
+        Tmax = sli["Tmax"]
+        dT = sli["dT"]
+        if Tlist is None:
+            Tlist = np.arange(Tmin, Tmax + 0.1 * dT, dT)
+        else:
+            Tlist = merge_arrays(Tlist, np.arange(Tmin, Tmax + 0.1 * dT, dT))
+    except KeyError:
+        if Tlist is None:
+            exapd_logger.critical("Tlist cannot be created for solid.")
+    try:
+        Tmelt = sli["Tmelt"]
+    except Exception as e:
+        exapd_logger.critical(
+            f"{e}: a high T for melting half of the box is needed.")
+    try:
+        ntarget = sli["ntarget"]
+    except KeyError:
+        ntarget = 5000
+    try:
+        replicate = sli["replicate"]
+    except KeyError:
+        replicate = 2
+    try:
+        orient = sli["orientation"]
+    except KeyError:
+        orient = "z"
+    if orient != "x" and orient != "y" and orient != "z":
+        exapd_logger.critical(
+            "Error: orientation needs to be x or y or z for SLI.")
+    sli_jobs = []
+    for ph in phases:
+        # supports lammps format or other formats that can be converted
+        # to lammps format by ASE.
+        ph_file = os.path.abspath(ph)
+        if not os.path.exists(ph_file):
+            exapd_logger.critical(f"File {ph_file} does not exist.")
+        name, form = ph_file.split('/')[-1].split('.')
+        phdir = f"{sli_dir}/{name}"
+        if not os.path.isdir(phdir):
+            try:
+                os.mkdir(phdir)
+            except Exception as e:
+                exapd_logger.critical(f"{e}: Cannot create directory {phdir}.")
+        if form == "lammps":
+            data_in = ph_file
+            barostat = get_lammps_barostat(data_in)
+        else:
+            data_in = f"{phdir}/{name}.lammps"
+            try:
+                barostat = create_lammps_supercell(
+                    general.system, ph_file, data_in, ntarget=ntarget)
+            except Exception as e:
+                exapd_logger.critical(
+                    f"{e}: ASE could not generate the lammps input for {ph_file}.")
+        # set up sli jobs
+        mysli = sli_simulator(data_in, Tlist, Tmelt, f"{phdir}", replicate, orient,
+                              barostat)
+        res = mysli.setup(general)
+        sli_jobs += mysli.get_joblist()
+    return sli_jobs
