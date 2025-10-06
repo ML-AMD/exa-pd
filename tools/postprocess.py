@@ -11,7 +11,6 @@ import os
 def process_liquid(general, liquid, write_file=True):
     '''
     post-process liquid calculations.
-    G0: Gibbs free energy of the pure phase at T = T_alchem (Tlist[-1])
     '''
     liq_dir = f"{general.proj_dir}/liquid"
     if not os.path.isdir(liq_dir):

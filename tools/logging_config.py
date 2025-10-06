@@ -1,10 +1,6 @@
 import sys
 import parsl
 
-"""
-Copied from logging_config.py of Thrust1
-"""
-
 
 class ExaPdLogger:
     """

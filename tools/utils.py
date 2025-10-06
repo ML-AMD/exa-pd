@@ -1,4 +1,5 @@
 import numpy as np
+from tools.logging_config import exapd_logger
 import os
 
 
@@ -10,7 +11,7 @@ def read_lmp_data(data_in, read_nab=False, read_pos=False):
     else: only output total number of atoms and total number of types.
     '''
     if not os.path.exists(data_in):
-        raise Exception(f"{infile} doesn't exist!")
+        exapd_logger.critical(f"{data_in} does not exist.")
     natom = ntyp = None
     reading_atoms = False
     with open(data_in) as infile:
@@ -51,10 +52,10 @@ def get_lammps_barostat(data_in, eps=1e-3):
     '''
     determine what barostat to use. return tri if xy xz yz in file
     data_in: input lammps file
-    eps: tolerance for lengths
+    eps: tolerance for lattice parameters 
     '''
     if not os.path.exists(data_in):
-        raise Exception(f"{infile} doesn't exist!")
+        exapd_logger.critical(f"{data_in} does not exist.")
     a = b = c = None
     with open(data_in) as infile:
         for line in infile:
@@ -72,7 +73,7 @@ def get_lammps_barostat(data_in, eps=1e-3):
             if a is not None and b is not None and c is not None:
                 break
     if a is None or b is None or c is None:
-        raise Exception(f"Incomplete lammps input file {data_in}!")
+        exapd_logger.critical(f"Incomplete lammps input file {data_in}.")
     diffab = abs(a - b)
     diffac = abs(a - c)
     diffbc = abs(b - c)
@@ -93,16 +94,15 @@ def create_lammps_supercell(system, infile, outfile, ntarget=500, eps=1.e-3):
     create a supercell in lammps format from a crystal structure file.
     system: list of elements in the system
     infile: crystal sturcute file
-    directory: location for the output file
     outfile: path to output lammps file
     ntarget: approximate number of atoms in the lammps file
-    eps: tolerance for lengths & angles
+    eps: tolerance for lattice parameters 
     '''
     from ase.io import read, write
     from ase.io.lammpsdata import write_lammps_data
     from ase.build.supercells import make_supercell
     if not os.path.exists(infile):
-        raise Exception(f"{infile} doesn't exist!")
+        exapd_logger.critical(f"{infile} does not exist.")
 
     # read crystal structure using ASE, convert hex or trigonal to ortho
     structure = read(infile)
@@ -155,9 +155,8 @@ def create_lammps_supercell(system, infile, outfile, ntarget=500, eps=1.e-3):
     alpha, beta, gamma = cell.angles()
     try:
         f = open(outfile, "wt")
-    except BaseException:
-        print(f"cannot open {outfile} to write!")
-        raise
+    except Exception as e:
+        exapd_logger.critical(f"Cannot open {outfile} to write.")
     f.write(f"generated from {infile}\n")
     f.write("\n")
     f.write(f"{len(types)} atoms\n")
@@ -189,7 +188,7 @@ def create_lammps_supercell(system, infile, outfile, ntarget=500, eps=1.e-3):
             f.write(
                 f"{i + 1:6d} {system.index(types[i]) + 1:4d} {x:16.6f} {y:16.6f} {z:16.6f}\n")
         else:
-            raise Exception(f"element {typ} is not in system in {infile}!")
+            exapd_logger.critical(f"Element {types[i]} is not in system in {infile}!")
     f.close()
     return barostat
 
@@ -198,7 +197,7 @@ def create_triclinic_box(a, b, c, alpha, beta, gamma, radians=False):
     '''
     convert conventional lattice parameters to box parameters for lammps.
     alpha, beta, gamma are in units of degrees by default
-    set radians=True if in radians already.
+    set radians=True if angles are in radians already.
     '''
     if not radians:
         alpha_rad = np.radians(alpha)
