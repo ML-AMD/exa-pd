@@ -35,13 +35,20 @@ We currently support the automated workflows on NERSC's Perlmutter. If you would
 5. Modify your json configuration file accordingly by setting `parsl_config` in the json configuration file to `<my_parsl_config_name>`
 
 ## Usage
-- Modify the the json configuration file to indicate all the input parameters
+- Modify the json configuration file in the `configs` directory to indicate all the input parameters
 
-- Run exa-PD with the json file created in the prerequisite step:
+- Run exa-PD with the json file:
     ```bash
-    python run.py --config <your_config_file>
+    python run.py --config configs/<your_config_file>
     ```
-  
+
+- After all the MD jobs are finished, run run_process.py to get the free energies for all liquid and solid phases.
+    ```bash
+    python run_process.py
+    ```
+
+- Feed free energies to CALPHAD modeling using the PYCALPHAD package to construct the phase diagram.
+       
 ## Examples
 Follow the step-by-step tutorial to construct the phase diagram for the Cu-Zr system: [exa-PD Tutorial](https://github.com/ML-AMD/exa-pd/blob/main/docs/source%20/tutorial.rst)   
 
