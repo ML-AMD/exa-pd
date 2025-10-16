@@ -179,7 +179,7 @@ class alchem(lammpsJobGroup):
             x = (0.5 * (np.pi * sigma * sigma) ** 1.5) * rho
             press, F0 = get_UF(p, x)
             F0 *= (kb * self._T)
-            dG += (F_ig + F0 + general.pressure * vol)
+            dG += (F_ig + F0 + general.pressure / rho)
         else:  # comp0 as ref
             m0 = general.mass[0]
             for x, m in zip(comp, general.mass):

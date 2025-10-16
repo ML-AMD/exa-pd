@@ -70,7 +70,7 @@ def get_lammps_barostat(data_in, eps=1e-3):
             if "zlo" in line and "zhi" in line:
                 values = line.split()
                 c = float(values[1]) - float(values[0])
-            if a is not None and b is not None and c is not None:
+            if "Atoms" in line:
                 break
     if a is None or b is None or c is None:
         exapd_logger.critical(f"Incomplete lammps input file {data_in}.")
@@ -144,15 +144,24 @@ def create_lammps_supercell(system, infile, outfile, ntarget=500, eps=1.e-3):
     nb = round(boxsize / b)
     nc = round(boxsize / c)
     supercell = structure * (na, nb, nc)
+    cell = supercell.get_cell()
+    a, b, c = cell.lengths()
+    alpha, beta, gamma = cell.angles()
+    if abs(alpha - 90) < eps and abs(beta -
+                                     90) < eps and abs(gamma - 90) < eps:
+        lx, ly, lz = a, b, c
+        xy = xz = yz = 0
+    else:  # triclinic cell
+        lx, ly, lz, xy, xz, yz, rotmat = create_triclinic_box(
+            a, b, c, alpha, beta, gamma)
+        if rotmat is not None:  # rotate the supercell to fix large skew
+            supercell = make_supercell(supercell, rotmat)
 
     # write to lammps file
     name = infile.split('/')[-1].split('.')[0]
     # write_lammps_data(outfile, supercell, atom_style="atomic")
     types = supercell.get_chemical_symbols()
     frac_coords = supercell.get_scaled_positions()
-    cell = supercell.get_cell()
-    a, b, c = cell.lengths()
-    alpha, beta, gamma = cell.angles()
     try:
         f = open(outfile, "wt")
     except Exception as e:
@@ -162,19 +171,10 @@ def create_lammps_supercell(system, infile, outfile, ntarget=500, eps=1.e-3):
     f.write(f"{len(types)} atoms\n")
     f.write(f"{len(system)} atom types\n")
     f.write("\n")
-
-    if abs(alpha - 90) < eps and abs(beta - 90) < eps and abs(gamma - 90) < eps:
-        lx, ly, lz = a, b, c
-        xy = xz = yz = 0
-        f.write(f"0.0      {lx:.6f} xlo xhi\n")
-        f.write(f"0.0      {ly:.6f} ylo yhi\n")
-        f.write(f"0.0      {lz:.6f} zlo zhi\n")
-    else:  # triclinic cell
-        lx, ly, lz, xy, xz, yz = create_triclinic_box(
-            a, b, c, alpha, beta, gamma)
-        f.write(f"0.0      {lx:.6f} xlo xhi\n")
-        f.write(f"0.0      {ly:.6f} ylo yhi\n")
-        f.write(f"0.0      {lz:.6f} zlo zhi\n")
+    f.write(f"0.0      {lx:.6f} xlo xhi\n")
+    f.write(f"0.0      {ly:.6f} ylo yhi\n")
+    f.write(f"0.0      {lz:.6f} zlo zhi\n")
+    if xy != 0 or xz != 0 or xy != 0:
         f.write(f"{xy:.6f} {xz:.6f} {yz:.6f} xy xz yz\n")
     f.write("\n")
     f.write("Atoms # atomic\n")
@@ -219,7 +219,29 @@ def create_triclinic_box(a, b, c, alpha, beta, gamma, radians=False):
     xz = c * cos_beta
     yz = c * (cos_alpha - cos_beta * cos_gamma) / sin_gamma
 
-    return lx, ly, lz, xy, xz, yz
+    # Check skew and modify the cell if the skew is too large
+    if abs(xy) <= lx / 2 and abs(xz) <= lx / 2 and abs(yz) <= ly / 2:
+        return lx, ly, lz, xy, xz, yz, None
+    else:
+        return fix_large_skew(lx, ly, lz, xy, xz, yz)
+
+
+def fix_large_skew(lx, ly, lz, xy, xz, yz):
+    rotmat = np.eye(3)
+    while abs(yz) > ly / 2:
+        sgn = np.sign(yz)
+        rotmat[2] -= sgn * rotmat[1]
+        yz -= sgn * ly
+        xz -= sgn * xy
+    while abs(xz) > lx / 2:
+        sgn = np.sign(xz)
+        rotmat[2] -= sgn * rotmat[0]
+        xz -= sgn * lx
+    while abs(xy) > lx / 2:
+        sgn = np.sign(xy)
+        rotmat[1] -= sgn * rotmat[0]
+        xy -= sgn * lx
+    return lx, ly, lz, xy, xz, yz, rotmat
 
 
 def create_tdb_header(system, mass):
