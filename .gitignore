@@ -4,3 +4,10 @@ __pycache__/
 runinfo
 test
 cmd*
+# Sphinx build directory
+docs/build/
+# Doctree cache
+docs/source/.doctrees/
+# macOS metadata
+.DS_Store
+**/.DS_Store
