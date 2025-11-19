@@ -16,15 +16,15 @@ if __name__ == '__main__':
 
     # create header for TDB file
     tdb = create_tdb_header(general.system, general.mass)
-    
+
     # postprocess liquid jobs
     if "liquid" in inp:
         tdb += process_liquid(general, inp["liquid"], write_file=True)
-    
+
     # postprocess solid jobs
     if "solid" in inp:
         tdb += process_solid(general, inp["solid"], write_file=True)
-    
+
     # write to TBD file
     fout = open(f"{general.proj_dir}/{''.join(general.system)}.TDB", "wt")
     fout.write(tdb)

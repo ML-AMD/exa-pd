@@ -66,7 +66,7 @@ def process_liquid(general, liquid, write_file=True):
     n1 = natom * comp1
     dn = (n1 - n0) / ncomp
     xall = np.zeros(ncomp + 1)
-    comp_idx = 0 
+    comp_idx = 0
     for i in range(len(comp0)):
         if comp0[i] < comp1[i]:
             comp_idx = i
@@ -114,7 +114,8 @@ def process_liquid(general, liquid, write_file=True):
             Gall = np.column_stack((Gall, G))
         xall[icomp] = n[comp_idx] / natom
     if write_file:
-        header = f"Gibbs free energy of the liquid phase\n   T  x_{general.system[comp_idx]} = "
+        header = f"Gibbs free energy of the liquid phase\n   T  x_{
+            general.system[comp_idx]} = "
         for x in xall:
             header += f"{x:.6f} "
         np.savetxt(f"{general.proj_dir}/g.liq.dat",
@@ -390,7 +391,8 @@ def redlich_kister(x, l0, l1, l2, l3):
     '''
     Redlich-Kister polynomial for regular mixing
     '''
-    return (l0 + l1 * (1 - 2 * x) + l2 * (1 - 2 * x)**2 + l3 * (1 - 2 * x)**3) * x * (1 - x)
+    return (l0 + l1 * (1 - 2 * x) + l2 * (1 - 2 * x)
+            ** 2 + l3 * (1 - 2 * x)**3) * x * (1 - x)
 
 
 def tlogpoly(T, l0, l1, l2, l3, l4, l5):
