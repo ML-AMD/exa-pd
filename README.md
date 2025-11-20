@@ -15,11 +15,6 @@ This package requires:
 - scipy >= 1.0.0
 - ase >= 3.24.0
 
-If you use [Conda](https://docs.conda.io/en/latest/miniconda.html) to manage Python packages, you may create a conda environment to install the required packages using the `amd_env` environment yaml file we provide:
-```bash
-conda env create -f amd_env.yml
-conda activate amd_env
-```
 Additionally:
 - Ensure you have a working [LAMMPS](https://www.lammps.org/) installation.
 - Ensure you have prepared the crystal structures for solid phases for free energy calculations in the format of Crystallographic Information File (CIF) or Vienna Ab initio Simulation Package (VASP). 
@@ -39,18 +34,18 @@ We currently support the automated workflows on NERSC's Perlmutter. If you would
 
 - Run exa-PD with the json file:
     ```bash
-    python run.py --config configs/<your_config_file>
+    python run.py --config <your_config_file>
     ```
 
 - After all the MD jobs are finished, run run_process.py to get the free energies for all liquid and solid phases.
     ```bash
-    python run_process.py
+    python run_process.py <your_config_file> 
     ```
 
 - Feed free energies to CALPHAD modeling using the PYCALPHAD package to construct the phase diagram.
        
 ## Examples
-Follow the step-by-step tutorial to construct the phase diagram for the Cu-Zr system: [exa-PD Tutorial](https://github.com/ML-AMD/exa-pd/blob/main/docs/source%20/tutorial.rst)   
+Follow the step-by-step tutorial to construct the phase diagram for the Cu-Zr system: ./docs/source/tutorial.rst   
 
 ## Copyright
 Copyright 2025. Iowa State University. All rights reserved. This software was produced under U.S. Government contract DE-AC02-07CH11358 for the Ames National Laboratory, which is operated by Iowa State University for the U.S. Department of Energy. The U.S. Government has rights to use, reproduce, and distribute this software. NEITHER THE GOVERNMENT NOR IOWA STATE UNIVERSITY MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE. If software is modified to produce derivative works, such modified software should be clearly marked, so as not to confuse it with the version available from the Ames National Laboratory.

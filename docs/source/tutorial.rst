@@ -3,14 +3,14 @@ Tutorial
 
 This tutorial demonstrates how to build and run **exa-PD** on both the GPU and CPU partitions of the `Perlmutter supercomputer <https://docs.nersc.gov/systems/perlmutter/architecture/>`_ to construct the phase diagram for the Cu-Zr system.
 
-1. Clone the Repository
+1. Extract the source code
 ------------------------
 
-Start by cloning the `exa-PD` repository:
+Start by extract the tar ball of the source code:
 
 .. code-block:: bash
 
-   git clone https://github.com/ML-AMD/exa-pd.git
+   tar zxvf exapd.tar.gz
    cd exa-pd
 
 ----
@@ -95,14 +95,13 @@ Edit the following fields in `my_input.json`:
 - ``pair_coeff:`` The pair coeff associated with the pair style in LAMMPS syntax. The path to the potential file should be changed to the absolute path.
 - ``ngpu:`` The number of nodes required for each GPU slurm job submitted by Parsl. Default is 1.
 - ``ncpu:`` The number of nodes required for each CPU slurm job submitted by Parsl. Default is 1.
-- ``gpu_account:`` The allocation or account name to be used when submitting GPU jobs (e.g., "m1234"). 
-- ``cpu_account:`` The allocation or account name to be used when submitting CPU jobs (e.g., "m1234"). 
+- ``gpu_schedule_option:`` Extra slurm options to be included for GPU jobs. 
+- ``cpu_schedule_option:`` Extra slurm options to be included for GPU jobs. 
 - ``gpu_exe:`` The executable command or absolute path to run LAMMPS on GPU resources.
 - ``cpu_exe:`` The executable command or absolute path to run LAMMPS on CPU resources.
 - ``parsl_config:`` The Parsl configuration profile that specifies how jobs are launched and resources are allocated. This value **have to match** the value in `config_registry.py` (e.g., "my_perlmutter")
-- ``qos:`` The quality-of-service (QOS) flag to control scheduling priority (e.g., "regular", "premium").
-- ``data_in:`` Input data file for the liquid structure in the atom style of the LAMMPS data format.  
-- ``ref_pair_style and ref_pair_ceoff:`` The pair style and coefficient defining the reference system.
+
+Please refer to the manuscript for the definition of other parameters.
 
 ----
 
