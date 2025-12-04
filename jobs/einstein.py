@@ -99,11 +99,13 @@ class einstein(lammpsJobGroup):
             kb = 1
         elif general.units == "metal":
             kb = 8.617333262e-5
-        f.write(f"variable        pref equal {(1 - lbd) * 3 * kb * self._T:.6f}\n")
+        f.write(
+            f"variable        pref equal {(1 - lbd) * 3 * kb * self._T:.6f}\n")
         var_U1 = "variable        U1 equal \""
         for i in range(self._ntyp):
             if self._nab[i] > 0:
-                f.write(f"variable        k{i + 1} equal v_pref/v_msd{i + 1}\n")
+                f.write(
+                    f"variable        k{i + 1} equal v_pref/v_msd{i + 1}\n")
                 f.write(f"group           g{i + 1} type {i + 1}\n")
                 f.write(
                     f"fix             {i + 3} g{i + 1} spring/self ${{k{i + 1}}}\n")
@@ -168,4 +170,11 @@ class einstein(lammpsJobGroup):
         lbd_extra = np.arange(0, 1.001, 0.01)
         dU_extra = interpolator(lbd_extra)
         dF = scipy.integrate.simpson(dU_extra, lbd_extra)
-        return f_ein + dF
+        # pv term
+        if general.pressure == 0:
+            pv = 0
+        else:
+            xlo, xhi, ylo, yhi, zlo, zhi = prejob.sample(varList=depend[2][:6])
+            vol = (xhi - xlo) * (yhi - ylo) * (zhi - zlo)
+            pv = general.pressure * vol / self._natom
+        return f_ein + dF + pv
