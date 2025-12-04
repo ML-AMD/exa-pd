@@ -4,7 +4,7 @@ Tutorial
 This tutorial demonstrates how to build and run **exa-PD** on both the GPU and CPU partitions of the `Perlmutter supercomputer <https://docs.nersc.gov/systems/perlmutter/architecture/>`_ to construct the phase diagram for the Cu-Zr system.
 
 1. Clone the Repository
-------------------------
+-----------------------
 
 Start by cloning the `exa-PD` repository:
 
@@ -16,15 +16,20 @@ Start by cloning the `exa-PD` repository:
 ----
 
 2. Install Dependencies
-------------------------
+-----------------------
 
+If you use `Conda <https://docs.conda.io/en/latest/miniconda.html>`_ to manage
+Python packages, you may create a conda environment to install the required
+packages using the ``amd_env.yml`` file we provide:
 
+.. code-block:: bash
 
-----
+   conda env create -f amd_env.yml
+   conda activate amd_env
 
 
 3. Prepare the Data and LAMMPS Setup
------------------------------------
+------------------------------------
 
 Ensure you have a working `LAMMPS <https://www.lammps.org/>`_ installation. If you will be using a neural network potential (NNP), make sure that the necessary package supporting the NNP is installed in LAMMPS. For example, if you use a NNP trained by DeepMD-kit, you will need to install `DeepMD-kit <https://github.com/deepmodeling/deepmd-kit>`_ and have LAMMPS compiled with USER-DP package enabled. You can also use the pre-compiled lmp executable that ususally comes with the DeepMD-kit installation.
 
@@ -50,7 +55,7 @@ Start by copying the default Perlmutter configuration:
 Then edit `my_perlmutter.py` and `config_registry.py`:
 
 a. Change the registration name
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 At the top of `config_registry.py`, update `CONFIG_REGISTRY` to reflect the new config name. This value **have to match** the value you will set in your JSON config file (the ``run`` field).
 
@@ -68,7 +73,7 @@ At the top of `config_registry.py`, update `CONFIG_REGISTRY` to reflect the new 
 
 
 b. Update each executor
-~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
 
 The Perlmutter configuration defines **two separate executors**: one that runs on **GPU nodes** and the other on **CPU nodes**
 
