@@ -10,7 +10,7 @@ from tools.config_manager import ConfigManager
 from parsl_configs.config_registry import load_parsl_config
 import os
 
-if __name__ == '__main__':
+def main():
     inp = ConfigManager()
     run_config = inp["run"]
 
@@ -76,3 +76,6 @@ if __name__ == '__main__':
     wait_for_current_tasks()
     print("all done")
     parsl.dfk().cleanup()
+
+if __name__ == '__main__':
+    main()
