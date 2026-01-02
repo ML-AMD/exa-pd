@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "exa_pd"
+version = "0.1.0"
+description = "Parsl-powered workflow to accelerate the construction of multi-element phase diagram (PD)."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [{ name = "ML-PD" }]
+# deps
+dependencies = [
+  "parsl >= 2025.3.24",
+  "numpy >= 2.0",
+  "scipy >= 1.0.0",
+  "ase >= 3.24.0"
+]
+
+[project.optional-dependencies]
+docs = ["sphinx>=7.1.2", "sphinx_rtd_theme>=3.0.2"]
+test = ["pytest>=8.3.5"]
+
+[project.scripts]
+exa_pd = "exa_pd:tutorial"
+
+[tool.setuptools]
+include-package-data = true
+py-modules = ["run"] 
+
+[tool.setuptools.packages.find]
+include = ["configs*", "example*", "jobs*", "parsl_configs*", "parsl_tasks*", "tools*"]
+
+#[tool.setuptools.package-data]
+#"ml_models.cgcnn" = ["form_1st.pth.tar", "atom_init.json"]
+#"workflows.vasp_assets" = ["INCAR.en", "INCAR_mag.en", "INCAR.rx"]
+#"configs" = ["*.json"]
