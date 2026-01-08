@@ -1,16 +1,57 @@
-MY API
-======
+API Reference for exaPD
+=============
 
-Here is some of my text: 
+Core LAMMPS Job Infrastructure
+------------------------------
 
-.. autoclass:: jobs.lammpsJob.lammpsJob
+lammpsJob
+~~~~~~~~
+
+.. automodule:: lammpsJob
    :members:
-   :undoc-members:
    :show-inheritance:
 
-.. autoclass:: jobs.lammpsJob.lammpsPara
+
+Thermodynamic Integration & Free Energy
+---------------------------------------
+
+alchem
+~~~~~
+
+.. automodule:: alchem
    :members:
-   :undoc-members:
    :show-inheritance:
 
-.. autofunction:: jobs.lammpsJob.pre_process
+einstein
+~~~~~~~
+
+.. automodule:: einstein
+   :members:
+   :show-inheritance:
+
+tramp
+~~~~
+
+.. automodule:: tramp
+   :members:
+   :show-inheritance:
+
+Hybrid Monte Carlo and Molecular Dynamics
+------------------------
+
+sgmc
+~~~
+
+.. automodule:: sgmc
+   :members:
+   :show-inheritance:
+
+Solid Liquid Coexistence
+------------------------
+
+sli
+~~~
+
+.. automodule:: sli
+   :members:
+   :show-inheritance:

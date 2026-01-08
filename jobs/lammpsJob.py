@@ -5,17 +5,35 @@ import os
 
 
 class lammpsJob:
-    '''
-    define a lammps job with an input script and all necessary data files.
-    '''
+    """
+    Define a LAMMPS job with an input script and all necessary data files.
+
+    Parameters
+    ----------
+    directory : str
+        Directory where the job will be executed.
+    scriptFile : str, optional
+        LAMMPS input script file.
+    arch : str, optional
+        Architecture type (e.g., "gpu", "cpu"). Default is "gpu".
+    depend : list object, optional
+        Dependency information for the job.
+        depend[0]: pre-job directory.
+        depend[1]: list of variable names to be set in LAMMPS script.
+        depend[2]: corresponding list ofvariable names in pre-job output.
+    priority : int, optional
+        Job priority:
+        - 0: pre_job
+        - 1: regular job
+        - 2: dependent job
+    """
 
     def __init__(self,
-                 directory,           # job directory
-                 scriptFile=None,     # lammps input script file
-                 arch="gpu",          # whether job supports gpu acceleration
-                 depend=None,         # whether job depends on other jobs
-                 priority=1,          # 0: pre_job; 1: reg_job; 2: dep_job
-                 ):
+                 directory,
+                 scriptFile=None,
+                 arch="gpu",
+                 depend=None,
+                 priority=1):
         self._dir = directory
         self._arch = arch
         self._depend = depend
@@ -32,27 +50,82 @@ class lammpsJob:
         self._script = scriptFile
 
     def get_dir(self):
+        """
+        Return the job directory.
+
+        Returns
+        -------
+        str
+            Job directory path.
+        """
         return self._dir
 
     def get_script(self):
+        """
+        Return the LAMMPS input script file.
+
+        Returns
+        -------
+        str or None
+            Input script filename.
+        """
         return self._script
 
     def get_arch(self):
+        """
+        Return the architecture type.
+
+        Returns
+        -------
+        str
+            Architecture identifier.
+        """
         return self._arch
 
     def get_depend(self):
+        """
+        Return dependency information.
+
+        Returns
+        -------
+        list or None
+            Dependency list.
+        """
         return self._depend
 
     def set_arch(self, arch):
+        """
+        Set the architecture type.
+
+        Parameters
+        ----------
+        arch : str
+            Architecture identifier.
+        """
         self._arch = arch
 
     def sample(self, varList=["PotEng"], logfile="log.lammps", skip=0.2):
-        '''
-        sample the average for a list of variables from LAMMPS output
-        varName: name of the quantity to be sampled, pe, ke, Volume ...
-        logfile: output file, default is log.lammps
-        skip: fraction of lines to be skipped for establishing an equilibrium
-        '''
+        """
+        Sample averaged quantities from a LAMMPS log file.
+
+        Parameters
+        ----------
+        varList : list of str, optional
+            Names of variables to sample (e.g., "PotEng", "Temp").
+        logfile : str, optional
+            Name of the LAMMPS log file.
+        skip : float, optional
+            Fraction of initial data to discard as equilibration.
+
+        Returns
+        -------
+        numpy.ndarray
+            Averaged values of the requested variables.
+
+        Notes
+        -----
+        This method assumes standard LAMMPS thermo output format.
+        """
         outfile = f"{self._dir}/{logfile}"
         if not os.path.exists(outfile):
             exapd_logger.critical(f"{outfile} does not exist!")
@@ -60,7 +133,7 @@ class lammpsJob:
             for i, line in enumerate(infile):
                 if 'Step ' in line:
                     beginline = i + 1
-                    varLogged = line.split()  # all logged variables
+                    varLogged = line.split()
                 if 'Loop ' in line:
                     endline = i
         cols = []
@@ -69,19 +142,25 @@ class lammpsJob:
                 cols.append(varLogged.index(var))
             except ValueError:
                 exapd_logger.critical(f"{var} is not sampled in {outfile}!")
-        data = np.loadtxt(outfile, skiprows=beginline, max_rows=endline - beginline,
-                          usecols=cols, ndmin=2)
+        data = np.loadtxt(outfile,
+                          skiprows=beginline,
+                          max_rows=endline - beginline,
+                          usecols=cols,
+                          ndmin=2)
         return np.mean(data[int(skip * len(data)):, :], axis=0)
 
 
 class lammpsJobGroup:
-    '''
-    define a group (list) of lammps jobs to be launched simultaneously.
-    '''
+    """
+    Define a group of LAMMPS jobs to be launched simultaneously.
 
-    def __init__(self,
-                 directory="./",       # path to group directory
-                 ):
+    Parameters
+    ----------
+    directory : str, optional
+        Path to the group directory.
+    """
+
+    def __init__(self, directory="./"):
         from typing import List
         self._dir = directory
         if not os.path.isdir(directory):
@@ -93,22 +172,36 @@ class lammpsJobGroup:
         self._jobList: List[lammpsJob] = []
 
     def get_joblist(self):
+        """
+        Return the list of LAMMPS jobs.
+
+        Returns
+        -------
+        list of lammpsJob
+            Job list.
+        """
         return self._jobList
 
 
 class lammpsPair:
-    '''
-    define the interatomic potential to be used in Lammps.
-    '''
+    """
+    Define an interatomic potential for LAMMPS.
+
+    Parameters
+    ----------
+    pair_style : str
+        LAMMPS pair_style command.
+    pair_coeff : str or list of str
+        LAMMPS pair_coeff command(s).
+    """
 
     def __init__(self, pair_style, pair_coeff):
         values = pair_style.split()
-        self._name = values[0]  # name of the pair style
+        self._name = values[0]
         if len(values) > 1:
             for i in range(1, len(values)):
                 if os.path.isfile(values[i]):
                     values[i] = os.path.abspath(values[i])
-            # other parameters for the pair style
             self._param = ' '.join(values[1:])
         else:
             self._param = ''
@@ -117,8 +210,8 @@ class lammpsPair:
             values = pair_coeff
         else:
             values = [pair_coeff]
-        self._numTyp = []  # list of numeric types for each pair_coeff
-        self._coeff = []  # list of coeff for each pair_coeff
+        self._numTyp = []
+        self._coeff = []
         for line in values:
             words = line.split()
             self._numTyp.append(' '.join(words[:2]))
@@ -133,81 +226,73 @@ class lammpsPair:
 
 
 class lammpsPara:
-    '''
-    define general parameters for lammps from the general
-    dictionary to be used throughout the calculations.
-    '''
+    """
+    Define general LAMMPS parameters from a dictionary.
+
+    Parameters
+    ----------
+    general : dict
+        Dictionary containing LAMMPS parameters.
+    """
 
     def __init__(self, general):
         self.system = general["system"].split()
-        try:
-            self.mass = general["mass"]
-            if isinstance(self.mass, list) and len(self.mass) != len(self.system):
-                exapd_logger.critical(
-                       "error: number of elements in mass and system doesn't match!")
-        except KeyError:
-            self.mass = None  # has to be provided in data.in or potential file
-        try:
-            self.units = general["units"]
-        except KeyError:
-            self.units = "metal"  # default units is metal
+        self.mass = general.get("mass", None)
+        if isinstance(self.mass, list) and len(self.mass) != len(self.system):
+            exapd_logger.critical(
+                "error: number of elements in mass and system doesn't match!"
+            )
+
+        self.units = general.get("units", "metal")
+
         pair_style = general["pair_style"]
         pair_coeff = general["pair_coeff"]
         self.pair = lammpsPair(pair_style, pair_coeff)
         try:
             self.proj_dir = os.path.abspath(general["dir"])
         except KeyError:
-            self.proj_dir = os.getcwd()  # default is current directory
+            self.proj_dir = os.getcwd()
         if not os.path.isdir(self.proj_dir):
             try:
                 os.mkdir(self.proj_dir)
             except Exception as e:
                 exapd_logger.critical(
-                    f"{e}: Cannot create directory {directory}!")
-        try:
-            self.neighbor = general["neighbor"]
-        except KeyError:
-            self.neighbor = None
-        try:
-            self.neigh_modify = general["neigh_modify"]
-        except KeyError:
-            self.neigh_modify = "delay 10"
-        try:
-            self.timestep = general["timestep"]
-        except KeyError:
-            self.timestep = None
-        try:
-            self.thermo = general["thermo"]
-        except KeyError:
-            self.thermo = 100
-        try:
-            self.pressure = general["pressure"]
-        except KeyError:
-            self.pressure = 0
-        try:
-            self.Tdamp = general["Tdamp"]
-        except KeyError:
-            self.Tdamp = "$(100.0*dt)"
-        try:
-            self.Pdamp = general["Pdamp"]
-        except KeyError:
-            self.Pdamp = "$(1000.0*dt)"
-        try:
-            self.run = general["run"]
-        except KeyError:
-            self.run = 1000000
+                    f"{e}: Cannot create directory {self.proj_dir}!")
+        self.neighbor = general.get("neighbor", None)
+        self.neigh_modify = general.get("neigh_modify", "delay 10")
+        self.timestep = general.get("timestep", None)
+        self.thermo = general.get("thermo", 100)
+        self.pressure = general.get("pressure", 0)
+        self.Tdamp = general.get("Tdamp", "$(100.0*dt)")
+        self.Pdamp = general.get("Pdamp", "$(1000.0*dt)")
+        self.run = general.get("run", 1000000)
 
 
 def hybridPair(pair0, pair1, lbd):
-    '''
-    create a hybrid pair style = (1-lbd)*pair0 + lbd*pair1.
-    input:
-         pair0, pair1: lammpsPair objects
-         lbd: value between 0 and 1
-    output:
-          string to be included in Lammps script
-    '''
-    cmd = f"pair_style\thybrid/scaled {1 - lbd} {pair0._name} {pair0._param} {lbd} {pair1._name} {pair1._param}\n"
+    """
+    Create a hybrid scaled pair style.
+
+    Parameters
+    ----------
+    pair0 : lammpsPair
+        First potential.
+    pair1 : lammpsPair
+        Second potential.
+    lbd : float
+        Mixing parameter (0 ≤ lbd ≤ 1).
+
+    Returns
+    -------
+    str
+        LAMMPS input script string.
+    """
+    cmd = f"pair_style\thybrid/scaled {
+        1 -
+        lbd} {
+        pair0._name} {
+            pair0._param} {lbd} {
+                pair1._name} {
+                    pair1._param}\n"
     if pair0._name == pair1._name:
         name0 = pair0._name + " 1"
         name1 = pair1._name + " 2"
@@ -222,11 +307,21 @@ def hybridPair(pair0, pair1, lbd):
 
 
 def reset_types(nab, natom):
-    '''
-    reset types for the atoms, useful to change composition from input file.
-    nab: number of atoms of each type, [na, nb, ...].
-    natom: total number of atoms.
-    '''
+    """
+    Reset atomic types based on desired composition.
+
+    Parameters
+    ----------
+    nab : list of int
+        Number of atoms of each type.
+    natom : int
+        Total number of atoms.
+
+    Returns
+    -------
+    str
+        LAMMPS commands to reset atom types.
+    """
     if sum(nab) != natom or min(nab) < 0:
         exapd_logger.critical("Error: Incorrect number of atoms!")
     ntot = nab[0]
@@ -234,20 +329,32 @@ def reset_types(nab, natom):
     cmd += f"set             group g1 type 1\n"
     for i in range(1, len(nab)):
         if nab[i] > 0:
-            cmd += f"group           g{i + 1} id <> {ntot + 1} {ntot + nab[i]}\n"
+            cmd += f"group           g{i +
+                                       1} id <> {ntot +
+                                                 1} {ntot +
+                                                     nab[i]}\n"
             cmd += f"set             group g{i + 1} type {i + 1}\n"
             ntot += nab[i]
     return cmd
 
 
 def pre_process(depend):
-    '''
-    pre_process a pre-equilibrate job to get run-time params
-    for a dependent job.
-    depend[0]: directory for the pre-job
-    depend[1]: params in lammps script to be determined
-    depend[2]: values of params sampled in the pre-job
-    '''
+    """
+    Pre-process a dependent job by sampling parameters from a pre-job.
+
+    Parameters
+    ----------
+    depend : list
+        Dependency specification:
+        - depend[0]: directory of the pre-job
+        - depend[1]: variable names to be set
+        - depend[2]: variables to sample
+
+    Returns
+    -------
+    str
+        Command-line arguments for LAMMPS variables.
+    """
     job = lammpsJob(directory=depend[0])
     res = job.sample(varList=depend[2])
     run_para = ''

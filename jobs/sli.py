@@ -6,19 +6,46 @@ import sys
 
 
 class sli_simulator(lammpsJobGroup):
-    '''
-    set up lammps jobs for solid-liquid interface simulations
-    '''
+    """
+    Set up LAMMPS jobs for solid–liquid interface (SLI) simulations.
+
+    This workflow prepares and runs a sequence of MD stages to create a
+    solid–liquid interface:
+    1) pre-equilibrate whole system at target temperature,
+    2) melt half of the simulation box by heating only the "liquid" region,
+    3) cool the melted region back to the target temperature,
+    4) re-equilibrate using a uniaxial barostat along the chosen orientation.
+
+    Parameters
+    ----------
+    data_in : str
+        Initial structure file in LAMMPS data format.
+    Tlist : list of float
+        Temperatures to run the interface preparation/equilibration at.
+    Tmelt : float
+        High temperature used to melt half of the box.
+    directory : str
+        Path to the group directory where job subfolders are created.
+    replicate : int, optional
+        Replication factor along the interface orientation direction.
+        Default is 2.
+    orient : {"x", "y", "z"}, optional
+        Direction along which the system is replicated and along which the
+        liquid-half region is defined. Default is "z".
+    barostat : str, optional
+        Barostat style for the pre-equilibration stage. If "none", the script
+        writes an NPT fix with an empty barostat style string (current behavior).
+        Default is "iso".
+    """
 
     def __init__(self,
-                 data_in,          # initial structure file in lammps format
-                 Tlist,            # list of temperatures to equilibrate
-                 Tmelt,            # high temperature for melting half of the box
-                 directory,        # path to group directory
-                 replicate=2,      # number of replicates
-                 orient="z",       # orientation, x, y or z
-                 barostat="iso",   # barostat for npt, if "none", run nvt
-                 ):
+                 data_in,
+                 Tlist,
+                 Tmelt,
+                 directory,
+                 replicate=2,
+                 orient="z",
+                 barostat="iso"):
         super().__init__(directory)
         self._datain = data_in
         self._Tlist = Tlist
@@ -32,6 +59,15 @@ class sli_simulator(lammpsJobGroup):
         self._nab = nab * replicate
 
     def setup(self, general):
+        """
+        Create job directories and LAMMPS input scripts for all temperatures.
+
+        Parameters
+        ----------
+        general : lammpsPara
+            General LAMMPS parameters (units, pair potential, neighbor settings,
+            masses, timestep, thermo frequency, pressure, Tdamp/Pdamp, run length).
+        """
         natom = self._natom
         for T in self._Tlist:
             Tdir = f"{self._dir}/T{T:g}"
@@ -43,6 +79,29 @@ class sli_simulator(lammpsJobGroup):
             self._jobList.append(job)
 
     def write_script(self, scriptFile, general, T):
+        """
+        Write a LAMMPS input script for solid–liquid interface preparation.
+
+        Parameters
+        ----------
+        scriptFile : str
+            Output path for the LAMMPS input script.
+        general : lammpsPara
+            General LAMMPS parameters and pair potential definition.
+        T : float
+            Target temperature for the interface simulation.
+
+        Notes
+        -----
+        The script defines a `liquid` group as half of the simulation box
+        along the chosen orientation (`self._orient`). It then runs several
+        stages:
+        - Pre-equilibrate (whole box) using NPT at temperature `T`.
+        - Heat only the `liquid` group from `T` to `Tmelt` using NVT.
+        - Cool the `liquid` group back from `Tmelt` to `T` using NVT.
+        - Reset velocities.
+        - Final relaxation using uniaxial NPT along `self._orient`.
+        """
         f = open(scriptFile, 'wt')
         f.write(f"#  SLI simulation for T = {T}\n")
         f.write("\n")
@@ -95,7 +154,11 @@ class sli_simulator(lammpsJobGroup):
         if self._barostat == "none":
             baro_style = ''
         elif "couple" not in self._barostat:
-            baro_style = f"{self._barostat} {general.pressure} {general.pressure} {general.Pdamp}"
+            baro_style = f"{
+                self._barostat} {
+                general.pressure} {
+                general.pressure} {
+                general.Pdamp}"
         else:
             baro_style = f"x {general.pressure} {general.pressure} {general.Pdamp} "\
                 + f"y {general.pressure} {general.pressure} {general.Pdamp} "\
