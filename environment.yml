@@ -3,6 +3,10 @@ channels:
   - conda-forge
 dependencies:
   - python=3.10
+  - numpy>=2.0
+  - scipy>=1.10
+  - ase>=3.24
   - pip
   - pip:
+      - parsl>=2025.3.24
       - exa_pd-0.1.0-py3-none-any.whl
