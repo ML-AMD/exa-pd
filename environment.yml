@@ -1,0 +1,8 @@
+name: exa-pd
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      - exa_pd-0.1.0-py3-none-any.whl
