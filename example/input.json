@@ -6,16 +6,26 @@
 		"pair_style" : "eam/fs",
 		"pair_coeff" : "* * ./v10_5_CuZr_B2.eam.fs Cu Zr"
 	},
-	"run" : {
-		"ngpu" : 4,
-		"ncpu" : 4,
-		"gpu_account" : "m4802",
-		"cpu_account" : "m4802",
-		"qos" : "premium",
-		"cpu_exe" : "lmp",
-		"gpu_exe" : "/global/homes/f/fzhang/install/lammps/src/lmp_gpu_serial -sf gpu -pk gpu 1",
-		"parsl_config" : "perlmutter_single_alloc"
-	},
+        "run" : {
+                "ngpu" : 1,
+                "ncpu" : 1,
+                "gpu_schedule_option" : [
+                        "#SBATCH -C gpu",
+                        "#SBATCH -t 01:00:00",
+                        "#SBATCH -A m4802",
+                        "#SBATCH --gpus-per-node=4",
+                        "#SBATCH -q premium"
+                ],
+                "cpu_schedule_option" : [
+                        "#SBATCH -C cpu",
+                        "#SBATCH -t 01:00:00",
+                        "#SBATCH -A m4802",
+                        "#SBATCH -q premium"
+                ],
+                "gpu_exe" : "/global/homes/z/zye/lammps/src/lmp_serial -sf gpu -pk gpu 1",
+                "cpu_exe" : "lmp",
+                "parsl_config" : "perlmutter"
+        },	
 	"solid" : {
 		"phases" : [
 			"./phases/Cu.cif",
@@ -27,9 +37,8 @@
 		],
 		"Tmin" : 300,
 		"Tmax" : 1500,
-		"dT" : 50,
-		"Tlist" : [2000],
-		"ntarget" : 4000
+		"dT" : 100,
+		"ntarget" : 2000
 	},
 	"liquid" : {
 		"data_in" : "./liq.lammps",
