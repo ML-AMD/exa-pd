@@ -1,4 +1,4 @@
-name: exa-pd
+name: exa_pd_env
 channels:
   - conda-forge
 dependencies:
