@@ -3,6 +3,7 @@ Exa-pd is a highly parallelizable workflow for constructing multi-element phase 
 
 ## Table of Contents
 - [Prerequisites](#prerequisites)
+- [Install](#Install)
 - [Register a new Parsl configuration](#register-a-new-parsl-configuration)
 - [Usage](#usage)
 - [Examples](#examples)
@@ -15,15 +16,30 @@ This package requires:
 - scipy >= 1.0.0
 - ase >= 3.24.0
 
-If you use [Conda](https://docs.conda.io/en/latest/miniconda.html) to manage Python packages, you may create a conda environment to install the required packages using the `amd_env` environment yaml file we provide:
-```bash
-conda env create -f amd_env.yml
-conda activate amd_env
-```
 Additionally:
 - Ensure you have a working [LAMMPS](https://www.lammps.org/) installation.
 - Ensure you have prepared the crystal structures for solid phases for free energy calculations in the format of Crystallographic Information File (CIF) or Vienna Ab initio Simulation Package (VASP). 
 - Create a json file that specifies all the input parameters for exa-PD. See for example [configs/input.json](configs/input.json).
+
+## Install
+### Option A — From source (Conda-only)
+If you use [Conda](https://docs.conda.io/en/latest/miniconda.html) to manage Python packages, you may create a conda environment to install the package along with prerequisite packages using the file included in this repository: [exa_pd_env.yml](./exa_pd_env.yml):
+```bash
+conda env create -f exa_pd_env.yml
+conda activate exa_pd_env
+# from the repo root:
+python run.py --help
+```
+
+### Option B
+```bash
+# (Recommended) create & activate a fresh virtual environment
+# python -m venv exa_pd_env
+# source exa_pd_env/bin/activate
+# python -m pip install --upgrade pip
+pip install exa_pd-0.1.0-py3-none-any.whl
+exa_pd --help
+```
 
 ## Register a new Parsl configuration
 We currently support the automated workflows on NERSC's Perlmutter. If you would like to run on a different computing system, you must add your own Parsl configuration following these steps:
