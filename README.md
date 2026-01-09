@@ -31,12 +31,9 @@ conda activate exa_pd_env
 python run.py --help
 ```
 
-### Option B
+### Option B — From release
 ```bash
 # (Recommended) create & activate a fresh virtual environment
-# python -m venv exa_pd_env
-# source exa_pd_env/bin/activate
-# python -m pip install --upgrade pip
 pip install exa_pd-0.1.0-py3-none-any.whl
 exa_pd --help
 ```
