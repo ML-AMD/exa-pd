@@ -4,14 +4,26 @@ import parsl
 
 class ExaPdLogger:
     """
-    Lightweight logging utility.
+    Lightweight logging utility for ExaPD workflows.
 
-    Supports five standard logging levels, in order of increasing severity:
-    DEBUG, INFO, WARNING, ERROR, and CRITICAL.
+    This class provides a minimal logging interface with five severity levels:
+    DEBUG, INFO, WARNING, ERROR, and CRITICAL. Messages are written to stdout
+    or stderr depending on severity, and CRITICAL messages terminate the
+    program after attempting to clean up Parsl resources.
 
-    Args:
-        level_name (str, optional): Logging level name.
-        logger_name (str, optional): Name prefix for all log messages.
+    Parameters
+    ----------
+    level_name : str, optional
+        Initial logging level (default: "INFO").
+    logger_name : str, optional
+        Name prefix for all log messages (default: "exa-pd").
+
+    Notes
+    -----
+    - DEBUG and INFO messages are written to stdout.
+    - WARNING and ERROR messages are written to stderr.
+    - CRITICAL messages are written to stderr and then cause program exit.
+    - If Parsl is active, a cleanup is attempted before exit.
     """
 
     LEVEL_MAP = {
@@ -23,13 +35,30 @@ class ExaPdLogger:
     }
 
     def __init__(self, level_name="INFO", logger_name="exa-pd"):
+        """
+        Initialize the logger with a given severity level and name.
+
+        Parameters
+        ----------
+        level_name : str, optional
+            Logging level name.
+        logger_name : str, optional
+            Logger name prefix.
+        """
         self.logger_name = logger_name
         self.configure(level_name)
 
     def configure(self, level_name="INFO"):
         """
-        Set the logging level.
-        If unsupported level, fall back to INFO.
+        Configure the logging level.
+
+        If an unsupported logging level is provided, the logger falls back
+        to INFO and prints a warning message to stdout.
+
+        Parameters
+        ----------
+        level_name : str, optional
+            Logging level name.
         """
         level_name = level_name.upper()
         if level_name in self.LEVEL_MAP:
@@ -37,13 +66,25 @@ class ExaPdLogger:
         else:
             self._current_level = self.LEVEL_MAP["INFO"]
             sys.stdout.write(
-                f"Unsupported log level '{level_name}'. Falling back to INFO.\n")
+                f"Unsupported log level '{level_name}'. Falling back to INFO.\n"
+            )
 
     def _log(self, level_name, message):
         """
-         - DEBUG/INFO to stdout
-         - WARNING/ERROR to stderr
-         - CRITICAL to stderr and then exits
+        Internal logging dispatcher.
+
+        Parameters
+        ----------
+        level_name : {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
+            Severity level.
+        message : str
+            Log message.
+
+        Notes
+        -----
+        - DEBUG/INFO → stdout
+        - WARNING/ERROR → stderr
+        - CRITICAL → stderr + Parsl cleanup + program exit
         """
         numeric_level = self.LEVEL_MAP[level_name]
 
@@ -65,25 +106,64 @@ class ExaPdLogger:
             sys.exit(1)
 
     def debug(self, message):
-        """Log an debug-level message to stderr if permitted by current log level."""
+        """
+        Log a DEBUG-level message.
+
+        Parameters
+        ----------
+        message : str
+            Message to log.
+        """
         self._log("DEBUG", message)
 
     def info(self, message):
-        """Log an info-level message to stderr if permitted by current log level."""
+        """
+        Log an INFO-level message.
+
+        Parameters
+        ----------
+        message : str
+            Message to log.
+        """
         self._log("INFO", message)
 
     def warning(self, message):
-        """Log an warning-level message to stderr if permitted by current log level."""
+        """
+        Log a WARNING-level message.
+
+        Parameters
+        ----------
+        message : str
+            Message to log.
+        """
         self._log("WARNING", message)
 
     def error(self, message):
-        """Log an error-level message to stderr if permitted by current log level."""
+        """
+        Log an ERROR-level message.
+
+        Parameters
+        ----------
+        message : str
+            Message to log.
+        """
         self._log("ERROR", message)
 
     def critical(self, message):
-        """Log a critical-level message to stderr and terminate the program."""
+        """
+        Log a CRITICAL-level message and terminate the program.
+
+        Parameters
+        ----------
+        message : str
+            Message to log.
+
+        Notes
+        -----
+        This method always results in program termination.
+        """
         self._log("CRITICAL", message)
 
 
-# global instance
+# Global logger instance
 exapd_logger = ExaPdLogger()

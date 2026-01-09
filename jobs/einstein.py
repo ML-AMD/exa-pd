@@ -163,10 +163,7 @@ class einstein(lammpsJobGroup):
                 )
                 f.write(f"group           g{i + 1} type {i + 1}\n")
                 f.write(
-                    f"fix             {i +
-                                       3} g{i +
-                                            1} spring/self ${{k{i +
-                                                                1}}}\n"
+                    f"fix             {i + 3} g{i + 1} spring/self ${{k{i + 1}}}\n"
                 )
                 f.write(f"fix_modify      {i + 3} energy yes\n")
                 var_U1 += f"f_{i + 3}/atoms/{1 - lbd} + "
