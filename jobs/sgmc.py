@@ -76,7 +76,7 @@ class sgmc_simulator(lammpsJobGroup):
     def write_script(self, scriptFile, general, T, mu):
         """
         Write a LAMMPS input script for a given temperature and chemical potential.
-    
+
         Parameters
         ----------
         scriptFile : str
@@ -87,16 +87,16 @@ class sgmc_simulator(lammpsJobGroup):
             Temperature for the simulation.
         mu : float
             Chemical potential difference (mu_B - mu_A) used in the SGMC swap fix.
-    
+
         Notes
         -----
         The script uses:
-    
+
         - ``fix npt`` for temperature/pressure control (with barostat style
           determined by ``self._barostat``), and
         - ``fix atom/swap ... semi-grand yes ... mu 0 {mu}`` to perform SGMC swaps
           between types 1 and 2.
-    
+
         Thermo output includes swap acceptance counters ``f_2[1]``, ``f_2[2]`` and
         the type populations ``c_typevec[1]``, ``c_typevec[2]``.
         """
