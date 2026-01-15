@@ -76,18 +76,18 @@ Here is an example configuration file for the Perlmutter system:
 			          "#SBATCH -A m4802",
 			          "#SBATCH --gpus-per-node=4",
 			          "#SBATCH -q premium"
-		            ],
+		              ],
 		        "cpu_schedule_option" : [
-                "#SBATCH -C cpu",
-                "#SBATCH -t 01:00:00",
+                	  "#SBATCH -C cpu",
+                	  "#SBATCH -t 01:00:00",
 			          "#SBATCH -A m4802",
-                "#SBATCH -q premium"
-                ],
+                	  "#SBATCH -q premium"
+                	  ],
 		        "gpu_exe" : "/path/to/lmp_serial -sf gpu -pk gpu 1",
 		        "cpu_exe" : "lmp",
 		        "parsl_config" : "perlmutter"
-	          },
-	      "solid" : {
+	          	},
+	  "solid" : {
 		        "phases" : [
 			          "./phases/Cu.cif",
 			          "./phases/Zr3Cu8.poscar",
@@ -95,13 +95,24 @@ Here is an example configuration file for the Perlmutter system:
 			          "./phases/Zr2Cu.poscar",
 			          "./phases/ZrCu.cif",
 			          "./phases/Zr.poscar"
-		            ],
+		              ],
 		        "Tmin" : 300,
 		        "Tmax" : 1500,
 		        "dT" : 50,
 		        "Tlist" : [2000],
 		        "ntarget" : 4000
-	          },
-
+	          	},
+	  "liquid" : {
+				"data_in" : "./example/liq.lammps",
+				"initial_comp" : [1, 0],
+				"final_comp" : [0, 1],
+				"ncomp" : 10,
+				"ref_pair_style" : "eam/fs",
+				"ref_pair_coeff" : "* * ./example/v10_5_CuZr_B2.eam.fs Cu Cu",
+				"dlbd" : 0.05,
+				"Tmin" : 700,
+				"Tmax" : 2000,
+				"dT" : 50
+				}
     }
 
