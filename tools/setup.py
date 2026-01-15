@@ -47,10 +47,7 @@ def liquidJobs(general, liquid):
     comp0 = np.array(comp0) / sum(comp0)
     comp1 = np.array(comp1) / sum(comp1)
 
-    try:
-        ncomp = liquid["ncomp"]
-    except KeyError:
-        ncomp = 10
+    ncomp = liquid.get("ncomp", 10)
 
     try:
         ref_pair_style = liquid["ref_pair_style"]
@@ -59,11 +56,7 @@ def liquidJobs(general, liquid):
     except KeyError:
         gen_ref_pair = None
 
-    try:
-        dlbd = liquid["dlbd"]
-    except KeyError:
-        dlbd = 0.05
-
+    dlbd = liquid.get("dlbd", 0.05)
     try:
         Tlist = np.sort(liquid["Tlist"])
     except KeyError:

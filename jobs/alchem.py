@@ -104,10 +104,7 @@ class alchem(lammpsJobGroup):
             elif general.units == "metal":
                 kb = 8.617333262e-5
                 sigma = 1.5
-            pair0 = lammpsPair(
-                f"ufm {5 * sigma}",
-                f"* * {kb * self._T * 50} {sigma}"
-            )
+            pair0 = lammpsPair(f"ufm {5 * sigma}", f"* * {kb * self._T * 50} {sigma}")
             barostat = "none"
         else:
             pair0 = self._ref_pair
