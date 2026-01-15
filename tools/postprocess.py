@@ -9,9 +9,56 @@ import os
 
 
 def process_liquid(general, liquid, write_file=True):
-    '''
-    post-process liquid calculations.
-    '''
+    """
+    Post-process liquid free-energy calculations and optionally generate a TDB entry.
+
+    This routine processes a set of composition points between an initial and final
+    composition using:
+    - alchemical thermodynamic integration (via :class:`jobs.alchem.alchem`) to obtain
+      the Gibbs free-energy offset at a reference temperature, and
+    - temperature ramping (via :class:`jobs.tramp.tramp`) to obtain enthalpy vs. T,
+      which is integrated using the Gibbs–Helmholtz relation.
+
+    It writes a grid of G(T, x) to ``g.liq.dat`` and, when applicable, constructs a
+    CALPHAD TDB entry for a (sub)binary liquid.
+
+    Parameters
+    ----------
+    general : lammpsPara
+        General simulation parameters (units, elements, project directory, etc.).
+    liquid : dict
+        Liquid calculation settings. Expected keys include (not all are mandatory):
+
+        - ``data_in`` : str
+            LAMMPS data file for the structure.
+        - ``initial_comp`` : array-like
+            Initial composition vector.
+        - ``final_comp`` : array-like
+            Final composition vector.
+        - ``ncomp`` : int, optional
+            Number of composition steps between initial and final composition.
+        - ``ref_pair_style`` / ``ref_pair_coeff`` : optional
+            Reference potential used for TI at compositions other than the initial one.
+        - ``dlbd`` : float, optional
+            $lambda$ spacing for TI.
+        - ``Tlist`` or ``Tmin``/``Tmax``/``dT`` : optional
+            Temperatures for ramping and defining the TI reference temperature.
+
+    write_file : bool, optional
+        If True, write ``g.liq.dat`` into ``general.proj_dir``.
+
+    Returns
+    -------
+    str
+        TDB text for the liquid phase if a (sub)binary system is detected; otherwise
+        an empty string.
+
+    Notes
+    -----
+    - The method assumes the project directory contains a ``liquid`` folder with
+      subfolders ``comp0``, ``comp1``, ... that contain completed TI and ramp runs.
+    - For the initial composition point, UFM is used as the default reference.
+    """
     liq_dir = f"{general.proj_dir}/liquid"
     if not os.path.isdir(liq_dir):
         exapd_logger.critical(
@@ -114,8 +161,7 @@ def process_liquid(general, liquid, write_file=True):
             Gall = np.column_stack((Gall, G))
         xall[icomp] = n[comp_idx] / natom
     if write_file:
-        header = f"Gibbs free energy of the liquid phase\n   T  x_{
-            general.system[comp_idx]} = "
+        header = f"Gibbs free energy of the liquid phase\n   T  x_{general.system[comp_idx]} = "
         for x in xall:
             header += f"{x:.6f} "
         np.savetxt(f"{general.proj_dir}/g.liq.dat",
@@ -209,9 +255,38 @@ def process_liquid(general, liquid, write_file=True):
 
 
 def process_solid(general, solid, write_file=True):
-    '''
-    postprocess solid calculations
-    '''
+    """
+    Post-process solid-phase free-energy calculations and generate TDB entries.
+
+    For each solid phase structure file provided, this routine:
+    - post-processes temperature-ramping results to obtain H(T),
+    - runs the Frenkel–Ladd (Einstein crystal) workflow to obtain an absolute
+      free-energy reference at a chosen temperature, and
+    - integrates G(T) using the Gibbs–Helmholtz relation and fits it to a
+      log-polynomial form to generate a TDB entry.
+
+    Parameters
+    ----------
+    general : lammpsPara
+        General simulation parameters (units, elements, project directory, etc.).
+    solid : dict
+        Solid calculation settings. Expected keys include:
+
+        - ``phases`` : list of str
+            Paths to structure files defining phases.
+        - ``dlbd`` : float, optional
+            λ spacing for the Einstein TI.
+        - ``Tlist`` or ``Tmin``/``Tmax``/``dT`` : optional
+            Temperatures used for ramping and for selecting the TI reference temperature.
+
+    write_file : bool, optional
+        If True, writes ``g.<phase>.dat`` in ``general.proj_dir`` for each phase.
+
+    Returns
+    -------
+    str
+        Concatenated TDB entries for all processed solid phases.
+    """
     sol_dir = f"{general.proj_dir}/solid"
     if not os.path.isdir(sol_dir):
         exapd_logger.critical(f"{sol_dir} does not exist for post-processing.")
@@ -247,8 +322,6 @@ def process_solid(general, solid, write_file=True):
     Tall = np.arange(min(Tlist), max(Tlist) + 0.1 * ddT, ddT)
     tdb = ''  # entries for solid phases in the TDB file
     for ph in phases:
-        # supports lammps format or other formats that can be converted
-        # to lammps format by ASE.
         ph_file = os.path.abspath(ph)
         name, form = ph_file.split('/')[-1].split('.')
         phdir = f"{sol_dir}/{name}"
@@ -259,11 +332,9 @@ def process_solid(general, solid, write_file=True):
         else:
             data_in = f"{phdir}/{name}.lammps"
         barostat = get_lammps_barostat(data_in)
-        #  process tramp jobs
         sol_tramp = tramp(data_in, Tlist, f"{phdir}/tramp")
         res = sol_tramp.process()
         arrT, arrH = fix_enthalpy(res[:, 0], res[:, 1], phase="solid")
-        # process einstein jobs
         natom, ntyp, nab = read_lmp_data(data_in, read_nab=True)
         pre_job_dir = f"{phdir}/tramp/T{Tlist[0]:g}"
         pre_var_names = "fxlo fxhi fylo fyhi fzlo fzhi".split()
@@ -278,36 +349,52 @@ def process_solid(general, solid, write_file=True):
         depend = (pre_job_dir, pre_var_names, pre_var_values)
         sol_ti = einstein(
             data_in, dlbd, Tlist[0], directory=f"{phdir}/einstein")
-        # calculate G(T) using Gibbs-Helmholtz equation
         G0 = sol_ti.process(general, depend)
         Gall = Gibbs_Helmholtz(arrT, arrH, Tlist[0], G0, Tall)
         if write_file:
             np.savetxt(f"{general.proj_dir}/g.{name}.dat",
                        np.column_stack((Tall, Gall)), fmt="%.6f",
                        header=f"Gibbs free energy of the {name} phase\n   T      G")
-        # fitting to log-poly function
         res = scipy.optimize.curve_fit(tlogpoly, Tall, Gall, np.ones(6))
-        params = res[0] * R / kb  # default unit in CALPHAD is J/mol
-        # create TDB entry
+        params = res[0] * R / kb
         tdb += create_tdb_nonsol_phase(name, general.system, nab)
         tdb += f"{Tlist[0]:g} {params[0]:+.12g}{params[1]:+.12g}*T\n"
         tdb += f"   {params[2]:+.12g}*T*LN(T){params[3]:+.12g}*T**2{params[4]:+.12g}*T**(-1)\n"
-        tdb += f"   {params[5]:+.12g}*T**3; {Tlist[-1]:g} N !\n"
-        tdb += "\n"
+        tdb += f"   {params[5]:+.12g}*T**3; {Tlist[-1]:g} N !\n\n"
 
     return tdb
 
 
 def fix_enthalpy(arrT, arrH, phase):
-    '''
-    in T-ramping of a phase, crystallization or melting can occur,
-    causing sudden change of H (kink).
-    use linear extrapolation to get rid of the kink.
-    arrT: temperature array;
-    arrH: corresponding enthalpy data;
-    phase: "liquid" or "solid", scan from high to low T for liquid to detect
-    crystallization; and low to high T for solid to detect melting.
-    '''
+    """
+    Detect and remove enthalpy kinks caused by phase transformations during ramping.
+
+    During temperature ramping, crystallization (liquid) or melting (solid) can
+    produce a sudden slope change in enthalpy vs temperature. This function detects
+    a kink by a large slope change and then applies a linear extrapolation to
+    smooth the data beyond the kink.
+
+    Parameters
+    ----------
+    arrT : array-like
+        Temperature samples.
+    arrH : array-like
+        Enthalpy samples corresponding to `arrT`.
+    phase : {"liquid", "solid"}
+        Phase type that determines scan direction:
+        - ``"liquid"`` scans from high to low temperature (crystallization detection),
+        - ``"solid"`` scans from low to high temperature (melting detection).
+
+    Returns
+    -------
+    tuple of numpy.ndarray
+        (T_smooth, H_smooth) arrays after kink removal.
+
+    Raises
+    ------
+    Exception
+        If `phase` is not one of ``"liquid"`` or ``"solid"``.
+    """
     idxsort = np.argsort(arrT)
     if phase == "solid":
         sortedT = np.asarray(arrT)[idxsort]
@@ -323,9 +410,7 @@ def fix_enthalpy(arrT, arrH, phase):
         avg_prev = np.mean(dH[:i])
         if avg_prev == 0:
             continue
-        # detect kink with a sudden change of slope by a factor > 2
         if abs(dH[i]) > 2.0 * abs(avg_prev):
-            # linear interpolate to the last temperature
             sortedT[i + 1] = sortedT[-1]
             sortedH[i + 1] = sortedH[i] + dH[i - 1] * \
                 (sortedT[i + 1] - sortedT[i])
@@ -339,19 +424,37 @@ def fix_enthalpy(arrT, arrH, phase):
 
 
 def Gibbs_Helmholtz(arrT, arrH, T0, G0, Tall):
-    '''
-    Compute Gibbs free energy from temperature-enthalpy data
-    using Gibbs-Helmholtz equation.
+    """
+    Compute Gibbs free energy G(T) from enthalpy data using Gibbs–Helmholtz integration.
 
-    Parameters:
-    arrT, arrH: input T and H values
-    T0: Reference temperature.
-    G0: Gibbs free energy at T0.
-    Tall: strictly sorted temperature array to calculate Gibbs free energy
+    Parameters
+    ----------
+    arrT : array-like
+        Temperature samples.
+    arrH : array-like
+        Enthalpy samples at `arrT`.
+    T0 : float
+        Reference temperature where G(T0) is known.
+    G0 : float
+        Gibbs free energy at the reference temperature `T0`.
+    Tall : array-like
+        Strictly increasing temperature grid for evaluating G(T).
 
-    Returns:
-    Gall: G for Tall
-    '''
+    Returns
+    -------
+    numpy.ndarray
+        Gibbs free energy evaluated at temperatures in `Tall`.
+
+    Raises
+    ------
+    Exception
+        If `Tall` is not strictly increasing.
+
+    Notes
+    -----
+    The implementation uses a monotone PCHIP interpolator for H(T) and Simpson
+    integration of H(T)/T^2.
+    """
     if not np.all(np.diff(Tall) > 0):
         raise Exception(
             "Tall should be strictly sorted in ascending order for G-H integration.")
@@ -362,16 +465,12 @@ def Gibbs_Helmholtz(arrT, arrH, T0, G0, Tall):
     else:
         Tint = np.insert(Tall, i0, T0)
 
-    # Interpolate enthalpy values using cubic spline
-    # H = scipy.interpolate.interp1d(x, y, kind='cubic', fill_value='extrapolate')(T)
     interpolator = scipy.interpolate.PchipInterpolator(
         arrT, arrH, extrapolate=True)
     Hint = interpolator(Tint)
-    # Initialize ΔG/T array
     detG_over_T = np.zeros(len(Tint))
     G0_over_T0 = G0 / T0
 
-    # Compute Gibbs free energy difference over temperature
     for i in range(i0):
         detG_over_T[i] = scipy.integrate.simpson(
             Hint[i:i0 + 1] / Tint[i:i0 + 1]**2, Tint[i:i0 + 1])
@@ -379,7 +478,6 @@ def Gibbs_Helmholtz(arrT, arrH, T0, G0, Tall):
         detG_over_T[i] = -scipy.integrate.simpson(
             Hint[i0:i + 1] / Tint[i0:i + 1]**2, Tint[i0:i + 1])
 
-    # Compute absolute Gibbs free energy
     Gall = (detG_over_T + G0_over_T0) * Tint
     if len(Gall) == len(Tall):
         return Gall
@@ -388,15 +486,39 @@ def Gibbs_Helmholtz(arrT, arrH, T0, G0, Tall):
 
 
 def redlich_kister(x, l0, l1, l2, l3):
-    '''
-    Redlich-Kister polynomial for regular mixing
-    '''
+    """
+    Redlich–Kister polynomial for excess mixing free energy.
+
+    Parameters
+    ----------
+    x : float or array-like
+        Composition variable (typically mole fraction of one component).
+    l0, l1, l2, l3 : float
+        Redlich–Kister coefficients.
+
+    Returns
+    -------
+    float or numpy.ndarray
+        Excess mixing contribution at composition `x`.
+    """
     return (l0 + l1 * (1 - 2 * x) + l2 * (1 - 2 * x)
             ** 2 + l3 * (1 - 2 * x)**3) * x * (1 - x)
 
 
 def tlogpoly(T, l0, l1, l2, l3, l4, l5):
-    '''
-    logrithmic-polynomial function for T dependence
-    '''
+    """
+    Log-polynomial function for temperature dependence.
+
+    Parameters
+    ----------
+    T : float or array-like
+        Temperature.
+    l0, l1, l2, l3, l4, l5 : float
+        Coefficients of the log-polynomial form.
+
+    Returns
+    -------
+    float or numpy.ndarray
+        Function value at temperature(s) `T`.
+    """
     return l0 + l1 * T + l2 * T * np.log(T) + l3 * T**2 + l4 / T + l5 * T**3

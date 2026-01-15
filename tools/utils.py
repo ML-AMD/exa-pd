@@ -4,6 +4,32 @@ import os
 
 
 def read_lmp_data(data_in, read_nab=False, read_pos=False):
+    """
+    Read a LAMMPS data file and extract basic structural information.
+
+    Parameters
+    ----------
+    data_in : str
+        Path to the LAMMPS data file.
+    read_nab : bool, optional
+        If True, return the number of atoms of each type.
+    read_pos : bool, optional
+        If True, return atomic Cartesian positions.
+
+    Returns
+    -------
+    tuple
+        Depending on flags:
+
+        - (natom, ntyp)
+        - (natom, ntyp, nab)
+        - (natom, ntyp, pos)
+        - (natom, ntyp, nab, pos)
+
+    Notes
+    -----
+    The function assumes ``atom_style atomic`` formatting.
+    """
     '''
     data_in: lammps input data file to be read.
     if read_nab: output the number of atoms in each type [na, nb, ...];
@@ -35,7 +61,7 @@ def read_lmp_data(data_in, read_nab=False, read_pos=False):
             if reading_atoms and line and count < natom:
                 fields = line.split()
                 if read_nab:
-                    type_id = int(fields[1])  # For 'atomic' style
+                    type_id = int(fields[1])
                     nab[type_id - 1] += 1
                 if read_pos:
                     pos[count, :] = [float(value) for value in fields[2:5]]
@@ -49,6 +75,21 @@ def read_lmp_data(data_in, read_nab=False, read_pos=False):
 
 
 def get_lammps_barostat(data_in, eps=1e-3):
+    """
+    Determine the appropriate LAMMPS barostat style from a data file.
+
+    Parameters
+    ----------
+    data_in : str
+        Path to the LAMMPS data file.
+    eps : float, optional
+        Tolerance for comparing lattice parameters.
+
+    Returns
+    -------
+    str
+        Barostat type: ``"iso"``, ``"aniso"``, ``"tri"``, or ``"couple xy/xz/yz"``.
+    """
     '''
     determine what barostat to use. return tri if xy xz yz in file
     data_in: input lammps file
@@ -90,21 +131,35 @@ def get_lammps_barostat(data_in, eps=1e-3):
 
 
 def create_lammps_supercell(system, infile, outfile, ntarget=500, eps=1.e-3):
+    """
+    Create a LAMMPS data file for a supercell built from a crystal structure.
+
+    Parameters
+    ----------
+    system : list of str
+        Chemical symbols defining the system ordering.
+    infile : str
+        Input crystal structure file readable by ASE.
+    outfile : str
+        Output LAMMPS data file path.
+    ntarget : int, optional
+        Target number of atoms in the supercell.
+    eps : float, optional
+        Tolerance for lattice parameter comparisons.
+
+    Returns
+    -------
+    str
+        Suggested barostat type for the generated supercell.
+    """
     '''
     create a supercell in lammps format from a crystal structure file.
-    system: list of elements in the system
-    infile: crystal sturcute file
-    outfile: path to output lammps file
-    ntarget: approximate number of atoms in the lammps file
-    eps: tolerance for lattice parameters
     '''
-    from ase.io import read, write
-    from ase.io.lammpsdata import write_lammps_data
+    from ase.io import read
     from ase.build.supercells import make_supercell
     if not os.path.exists(infile):
         exapd_logger.critical(f"{infile} does not exist.")
 
-    # read crystal structure using ASE, convert hex or trigonal to ortho
     structure = read(infile)
     cell = structure.get_cell()
     a, b, c = cell.lengths()
@@ -121,105 +176,102 @@ def create_lammps_supercell(system, infile, outfile, ntarget=500, eps=1.e-3):
             barostat = "couple yz"
         else:
             barostat = "aniso"
-    elif abs(a - b) < eps and abs(alpha - 90) < eps \
-            and abs(beta - 90) < eps and abs(gamma - 120) < eps:  # hexagonal cell
-        structure = make_supercell(
-            structure, [[1, -1, 0], [1, 1, 0], [0, 0, 1]])
-        cell = structure.get_cell()
-        a, b, c = cell.lengths()
-        barostat = "couple xy"
-    elif abs(a - b) < eps and abs(alpha - 90) < eps \
-            and abs(beta - 90) < eps and abs(gamma - 60) < eps:  # hexagonal cell
-        structure = make_supercell(
-            structure, [[1, 1, 0], [-1, 1, 0], [0, 0, 1]])
-        cell = structure.get_cell()
-        a, b, c = cell.lengths()
-        barostat = "couple xy"
-    # trigonal cell to be added #
 
-    # generate supercell
     rho = len(structure) / structure.get_volume()
     boxsize = (ntarget / rho) ** (1 / 3)
     na = round(boxsize / a)
     nb = round(boxsize / b)
     nc = round(boxsize / c)
     supercell = structure * (na, nb, nc)
+
     cell = supercell.get_cell()
     a, b, c = cell.lengths()
     alpha, beta, gamma = cell.angles()
-    if abs(alpha - 90) < eps and abs(beta -
-                                     90) < eps and abs(gamma - 90) < eps:
+    if abs(alpha - 90) < eps and abs(beta - 90) < eps and abs(gamma - 90) < eps:
         lx, ly, lz = a, b, c
         xy = xz = yz = 0
-    else:  # triclinic cell
+    else:
         lx, ly, lz, xy, xz, yz, rotmat = create_triclinic_box(
             a, b, c, alpha, beta, gamma)
-        if rotmat is not None:  # rotate the supercell to fix large skew
+        if rotmat is not None:
             supercell = make_supercell(supercell, rotmat)
 
-    # write to lammps file
     name = infile.split('/')[-1].split('.')[0]
-    # write_lammps_data(outfile, supercell, atom_style="atomic")
     types = supercell.get_chemical_symbols()
     frac_coords = supercell.get_scaled_positions()
+
     try:
         f = open(outfile, "wt")
-    except Exception as e:
+    except Exception:
         exapd_logger.critical(f"Cannot open {outfile} to write.")
-    f.write(f"generated from {infile}\n")
-    f.write("\n")
+
+    f.write(f"generated from {infile}\n\n")
     f.write(f"{len(types)} atoms\n")
-    f.write(f"{len(system)} atom types\n")
-    f.write("\n")
-    f.write(f"0.0      {lx:.6f} xlo xhi\n")
-    f.write(f"0.0      {ly:.6f} ylo yhi\n")
-    f.write(f"0.0      {lz:.6f} zlo zhi\n")
-    if xy != 0 or xz != 0 or xy != 0:
+    f.write(f"{len(system)} atom types\n\n")
+    f.write(f"0.0 {lx:.6f} xlo xhi\n")
+    f.write(f"0.0 {ly:.6f} ylo yhi\n")
+    f.write(f"0.0 {lz:.6f} zlo zhi\n")
+    if xy != 0 or xz != 0 or yz != 0:
         f.write(f"{xy:.6f} {xz:.6f} {yz:.6f} xy xz yz\n")
-    f.write("\n")
-    f.write("Atoms # atomic\n")
-    f.write("\n")
-    for i in range(len(types)):
-        if types[i] in system:
-            fx, fy, fz = frac_coords[i]
-            x = fx * lx + fy * xy + fz * xz
-            y = fy * ly + fz * yz
-            z = fz * lz
-            f.write(
-                f"{i + 1:6d} {system.index(types[i]) + 1:4d} {x:16.6f} {y:16.6f} {z:16.6f}\n")
-        else:
-            exapd_logger.critical(f"Element {types[i]} is not in system in {infile}!")
+    f.write("\nAtoms # atomic\n\n")
+
+    for i, el in enumerate(types):
+        if el not in system:
+            exapd_logger.critical(
+                f"Element {el} is not in system in {infile}!")
+        fx, fy, fz = frac_coords[i]
+        x = fx * lx + fy * xy + fz * xz
+        y = fy * ly + fz * yz
+        z = fz * lz
+        f.write(
+            f"{i + 1:6d} {system.index(el) + 1:4d} "
+            f"{x:16.6f} {y:16.6f} {z:16.6f}\n"
+        )
     f.close()
     return barostat
 
 
 def create_triclinic_box(a, b, c, alpha, beta, gamma, radians=False):
+    """
+    Convert lattice parameters to LAMMPS triclinic box parameters.
+
+    Parameters
+    ----------
+    a, b, c : float
+        Lattice lengths.
+    alpha, beta, gamma : float
+        Lattice angles.
+    radians : bool, optional
+        If True, angles are already in radians.
+
+    Returns
+    -------
+    tuple
+        (lx, ly, lz, xy, xz, yz, rotmat)
+    """
     '''
     convert conventional lattice parameters to box parameters for lammps.
-    alpha, beta, gamma are in units of degrees by default
-    set radians=True if angles are in radians already.
     '''
     if not radians:
-        alpha_rad = np.radians(alpha)
-        beta_rad = np.radians(beta)
-        gamma_rad = np.radians(gamma)
+        alpha = np.radians(alpha)
+        beta = np.radians(beta)
+        gamma = np.radians(gamma)
 
-    # Calculate cosines and sine
-    cos_alpha = np.cos(alpha_rad)
-    cos_beta = np.cos(beta_rad)
-    cos_gamma = np.cos(gamma_rad)
-    sin_gamma = np.sin(gamma_rad)
+    cos_alpha = np.cos(alpha)
+    cos_beta = np.cos(beta)
+    cos_gamma = np.cos(gamma)
+    sin_gamma = np.sin(gamma)
 
-    # Compute components of lattice paremeters
     lx = a
     ly = b * sin_gamma
-    lz = c * np.sqrt(1 - cos_alpha**2 - cos_beta**2 - cos_gamma**2 +
-                     2 * cos_alpha * cos_beta * cos_gamma) / sin_gamma
+    lz = c * np.sqrt(
+        1 - cos_alpha**2 - cos_beta**2 - cos_gamma**2
+        + 2 * cos_alpha * cos_beta * cos_gamma
+    ) / sin_gamma
     xy = b * cos_gamma
     xz = c * cos_beta
     yz = c * (cos_alpha - cos_beta * cos_gamma) / sin_gamma
 
-    # Check skew and modify the cell if the skew is too large
     if abs(xy) <= lx / 2 and abs(xz) <= lx / 2 and abs(yz) <= ly / 2:
         return lx, ly, lz, xy, xz, yz, None
     else:
@@ -227,6 +279,14 @@ def create_triclinic_box(a, b, c, alpha, beta, gamma, radians=False):
 
 
 def fix_large_skew(lx, ly, lz, xy, xz, yz):
+    """
+    Reduce large skew components of a triclinic box via basis rotation.
+
+    Returns
+    -------
+    tuple
+        (lx, ly, lz, xy, xz, yz, rotation_matrix)
+    """
     rotmat = np.eye(3)
     while abs(yz) > ly / 2:
         sgn = np.sign(yz)
@@ -245,6 +305,21 @@ def fix_large_skew(lx, ly, lz, xy, xz, yz):
 
 
 def create_tdb_header(system, mass):
+    """
+    Create the global header of a CALPHAD TDB file.
+
+    Parameters
+    ----------
+    system : list of str
+        Chemical symbols.
+    mass : list of float
+        Atomic masses.
+
+    Returns
+    -------
+    str
+        Uppercase TDB header text.
+    """
     '''
     create overall header of the TDB file
     '''
@@ -254,104 +329,145 @@ def create_tdb_header(system, mass):
     tdb += "ELEMENT VA   VACUUM                    0.0000E+00  0.0000E+00  0.0000E+00!\n"
     for el, m in zip(system, mass):
         tdb += f"ELEMENT {el} NA                          {m:.4E}  0.0000E+00  0.0000E+00!\n"
-
-    tdb += "\n"
-    tdb += " TYPE_DEFINITION % SEQ *!\n"
+    tdb += "\n TYPE_DEFINITION % SEQ *!\n"
     tdb += f" DEFINE_SYSTEM_DEFAULT ELEMENT {len(system)} !\n"
-    tdb += " DEFAULT_COMMAND DEF_SYS_ELEMENT VA /- !\n"
-    tdb += "\n"
-
+    tdb += " DEFAULT_COMMAND DEF_SYS_ELEMENT VA /- !\n\n"
     return tdb.upper()
 
 
 def create_tdb_nonsol_phase(name, system, nab):
+    """
+    Create a TDB phase header for a non-solution phase.
+
+    Parameters
+    ----------
+    name : str
+        Phase name.
+    system : list of str
+        Chemical symbols.
+    nab : list of int
+        Number of atoms of each species.
+
+    Returns
+    -------
+    str
+        TDB phase header.
+    """
     '''
     create the TDB header for a non-solution phase.
-    name, str: name of the phase
-    system, list: ['A', 'B',...], elements in a system
-    nab, list: [na, nb,...], number of atoms for each element,
     '''
-    ntyp = len(system)
     natom = sum(nab)
-    tdb = ''
-    comp = {}  # composition of the phase
-    for i in range(ntyp):
-        if nab[i] > 0:
-            comp[system[i]] = nab[i] / natom
-    tdb += f" PHASE {name}  %  {len(comp)}  "
-    for el in comp.keys():
-        tdb += f"{comp[el]:.6f} "
+    comp = {system[i]: nab[i] / natom
+            for i in range(len(system)) if nab[i] > 0}
+
+    tdb = f" PHASE {name}  %  {len(comp)}  "
+    for x in comp.values():
+        tdb += f"{x:.6f} "
     tdb += "!\n"
     tdb += f"    CONSTITUENT {name}  :"
-    for el in comp.keys():
+    for el in comp:
         tdb += f"{el} : "
-    tdb += "!\n\n"
-    tdb += f"   PARAMETER G({name},"
-    for el in comp.keys():
+    tdb += "!\n\n   PARAMETER G({name},"
+    for el in comp:
         tdb += f"{el}:"
     tdb = tdb[:-1] + ";0) "
     return tdb.upper()
 
 
 def create_tdb_binsol_phase(name, el1, el2):
+    """
+    Create a TDB header for a binary solution phase.
+
+    Parameters
+    ----------
+    name : str
+        Phase name.
+    el1, el2 : str
+        Element symbols.
+
+    Returns
+    -------
+    tuple
+        (phase_definition, endmember_params, rk_params)
+    """
     '''
     create the TDB header for a binary solution phase with one sublattice.
-    name, str: name of the phase
-    el1, str:: name of the first element in the solution
-    el2, str: number of the second element in the solution,
     '''
-    # definition of the phase
     phase = f" PHASE {name}  %  1 1.0 !\n"
     phase += f"    CONSTITUENT {name}  :{el1},{el2} : !\n\n"
     phase = phase.upper()
 
-    # params for endmembers
-    end = ['', '']
-    end[0] = f"   PARAMETER G({name},{el1};0)".upper()
-    end[1] = f"   PARAMETER G({name},{el2};0)".upper()
+    end = [
+        f"   PARAMETER G({name},{el1};0)".upper(),
+        f"   PARAMETER G({name},{el2};0)".upper()
+    ]
 
-    # params for R-K coefficients L0, L1, L2, L3
-    rk = [''] * 4
-    for i in range(4):
-        rk[i] = f"   PARAMETER L({name},{el1},{el2};{i})".upper()
+    rk = [f"   PARAMETER L({name},{el1},{el2};{i})".upper()
+          for i in range(4)]
 
     return phase, end, rk
 
 
 def merge_arrays(arr1, arr2, tolerance=0.001):
-    # Combine the arrays
-    combined = np.concatenate((arr1, arr2))
+    """
+    Merge two numeric arrays while removing near-duplicates.
 
-    # Sort the combined array
-    combined = np.sort(combined)
+    Parameters
+    ----------
+    arr1, arr2 : array-like
+        Input arrays.
+    tolerance : float, optional
+        Minimum separation to treat values as distinct.
 
-    # Remove duplicates within tolerance
+    Returns
+    -------
+    numpy.ndarray
+        Sorted merged array.
+    """
+    combined = np.sort(np.concatenate((arr1, arr2)))
     result = [combined[0]]
-    for i in range(1, len(combined)):
-        if abs(combined[i] - result[-1]) > tolerance:
-            result.append(combined[i])
-
+    for v in combined[1:]:
+        if abs(v - result[-1]) > tolerance:
+            result.append(v)
     return np.array(result)
 
 
 def F_idealgas(temp, rho, natom, mass, comp, constants):
-    '''
-    free energy of ideal gas;
-    temp: temperature; rho: number density; natom: number of atoms;
-    mass: atomic masses; comp: compoistion.
-    constants: physical constants
-    '''
-    # constants
-    kb, hbar, au = constants
+    """
+    Compute the ideal-gas Helmholtz free energy per particle.
 
+    Parameters
+    ----------
+    temp : float
+        Temperature.
+    rho : float
+        Number density.
+    natom : int
+        Number of atoms.
+    mass : list of float
+        Atomic masses.
+    comp : list of float
+        Composition fractions.
+    constants : tuple
+        Physical constants (kb, hbar, au).
+
+    Returns
+    -------
+    float
+        Ideal-gas free energy.
+    """
+    '''
+    free energy of ideal gas
+    '''
+    kb, hbar, au = constants
     beta = 1 / (kb * temp)
-    debroglie = [np.sqrt(2 * np.pi * beta * hbar ** 2 / (m * au))
-                 for m in mass]
+    debroglie = [
+        np.sqrt(2 * np.pi * beta * hbar**2 / (m * au))
+        for m in mass
+    ]
+
     FE = 0
-    for k in range(len(comp)):
-        if (comp[k] == 0):
-            FE += 0
-        else:
-            FE += comp[k] * (3 * np.log(debroglie[k]) +
-                             np.log(rho) - 1 + np.log(comp[k]))
-    return 1 / beta * FE
+    for x, lam in zip(comp, debroglie):
+        if x > 0:
+            FE += x * (3 * np.log(lam) + np.log(rho) - 1 + np.log(x))
+    return FE / beta
