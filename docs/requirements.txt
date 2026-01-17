@@ -2,3 +2,6 @@ sphinx>=7
 sphinx_rtd_theme>=3.0.2
 sphinx-autodoc-typehints
 sphinx-copybutton
+numpy
+parsl
+scipy
