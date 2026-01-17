@@ -1,0 +1,756 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Reference for exaPD &mdash; exa-pd</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=01f34227"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="_static/copybutton.js?v=f281be69"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Tutorial" href="tutorial.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            exa-pd
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">API Reference for exaPD</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#core-lammps-job-infrastructure">Core LAMMPS Job Infrastructure</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-jobs.lammpsJob">lammpsJob</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#jobs.lammpsJob.hybridPair"><code class="docutils literal notranslate"><span class="pre">hybridPair()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#jobs.lammpsJob.lammpsJob"><code class="docutils literal notranslate"><span class="pre">lammpsJob</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#jobs.lammpsJob.lammpsJobGroup"><code class="docutils literal notranslate"><span class="pre">lammpsJobGroup</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#jobs.lammpsJob.lammpsPair"><code class="docutils literal notranslate"><span class="pre">lammpsPair</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#jobs.lammpsJob.lammpsPara"><code class="docutils literal notranslate"><span class="pre">lammpsPara</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#jobs.lammpsJob.pre_process"><code class="docutils literal notranslate"><span class="pre">pre_process()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#jobs.lammpsJob.reset_types"><code class="docutils literal notranslate"><span class="pre">reset_types()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#thermodynamic-integration-free-energy">Thermodynamic Integration &amp; Free Energy</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-jobs.alchem">alchem</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#jobs.alchem.alchem"><code class="docutils literal notranslate"><span class="pre">alchem</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-jobs.einstein">einstein</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#jobs.einstein.einstein"><code class="docutils literal notranslate"><span class="pre">einstein</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-jobs.tramp">tramp</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#jobs.tramp.tramp"><code class="docutils literal notranslate"><span class="pre">tramp</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#hybrid-monte-carlo-and-molecular-dynamics">Hybrid Monte Carlo and Molecular Dynamics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-jobs.sgmc">sgmc</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#jobs.sgmc.sgmc_simulator"><code class="docutils literal notranslate"><span class="pre">sgmc_simulator</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#solid-liquid-coexistence">Solid Liquid Coexistence</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-jobs.sli">sli</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#jobs.sli.sli_simulator"><code class="docutils literal notranslate"><span class="pre">sli_simulator</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">exa-pd</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">API Reference for exaPD</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/api.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="api-reference-for-exapd">
+<h1>API Reference for exaPD<a class="headerlink" href="#api-reference-for-exapd" title="Link to this heading"></a></h1>
+<section id="core-lammps-job-infrastructure">
+<h2>Core LAMMPS Job Infrastructure<a class="headerlink" href="#core-lammps-job-infrastructure" title="Link to this heading"></a></h2>
+<section id="module-jobs.lammpsJob">
+<span id="lammpsjob"></span><h3>lammpsJob<a class="headerlink" href="#module-jobs.lammpsJob" title="Link to this heading"></a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="jobs.lammpsJob.hybridPair">
+<span class="sig-prename descclassname"><span class="pre">jobs.lammpsJob.</span></span><span class="sig-name descname"><span class="pre">hybridPair</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pair0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pair1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lbd</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jobs/lammpsJob.html#hybridPair"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jobs.lammpsJob.hybridPair" title="Link to this definition"></a></dt>
+<dd><p>Create a hybrid scaled pair style.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pair0</strong> (<a class="reference internal" href="#jobs.lammpsJob.lammpsPair" title="jobs.lammpsJob.lammpsPair"><em>lammpsPair</em></a>) – First potential.</p></li>
+<li><p><strong>pair1</strong> (<a class="reference internal" href="#jobs.lammpsJob.lammpsPair" title="jobs.lammpsJob.lammpsPair"><em>lammpsPair</em></a>) – Second potential.</p></li>
+<li><p><strong>lbd</strong> (<em>float</em>) – Mixing parameter (0 ≤ lbd ≤ 1).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>LAMMPS input script string.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="jobs.lammpsJob.lammpsJob">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">jobs.lammpsJob.</span></span><span class="sig-name descname"><span class="pre">lammpsJob</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">directory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scriptFile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gpu'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">priority</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jobs/lammpsJob.html#lammpsJob"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jobs.lammpsJob.lammpsJob" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Define a LAMMPS job with an input script and all necessary data files.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>directory</strong> (<em>str</em>) – Directory where the job will be executed.</p></li>
+<li><p><strong>scriptFile</strong> (<em>str</em><em>, </em><em>optional</em>) – LAMMPS input script file.</p></li>
+<li><p><strong>arch</strong> (<em>str</em><em>, </em><em>optional</em>) – Architecture type (e.g., “gpu”, “cpu”). Default is “gpu”.</p></li>
+<li><p><strong>depend</strong> (<em>list object</em><em>, </em><em>optional</em>) – Dependency information for the job.
+depend[0]: pre-job directory.
+depend[1]: list of variable names to be set in LAMMPS script.
+depend[2]: corresponding list ofvariable names in pre-job output.</p></li>
+<li><p><strong>priority</strong> (<em>int</em><em>, </em><em>optional</em>) – Job priority:
+- 0: pre_job
+- 1: regular job
+- 2: dependent job</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="jobs.lammpsJob.lammpsJob.get_arch">
+<span class="sig-name descname"><span class="pre">get_arch</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/jobs/lammpsJob.html#lammpsJob.get_arch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jobs.lammpsJob.lammpsJob.get_arch" title="Link to this definition"></a></dt>
+<dd><p>Return the architecture type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Architecture identifier.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="jobs.lammpsJob.lammpsJob.get_depend">
+<span class="sig-name descname"><span class="pre">get_depend</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/jobs/lammpsJob.html#lammpsJob.get_depend"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jobs.lammpsJob.lammpsJob.get_depend" title="Link to this definition"></a></dt>
+<dd><p>Return dependency information.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dependency list.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="jobs.lammpsJob.lammpsJob.get_dir">
+<span class="sig-name descname"><span class="pre">get_dir</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/jobs/lammpsJob.html#lammpsJob.get_dir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jobs.lammpsJob.lammpsJob.get_dir" title="Link to this definition"></a></dt>
+<dd><p>Return the job directory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Job directory path.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="jobs.lammpsJob.lammpsJob.get_script">
+<span class="sig-name descname"><span class="pre">get_script</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/jobs/lammpsJob.html#lammpsJob.get_script"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jobs.lammpsJob.lammpsJob.get_script" title="Link to this definition"></a></dt>
+<dd><p>Return the LAMMPS input script file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Input script filename.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="jobs.lammpsJob.lammpsJob.sample">
+<span class="sig-name descname"><span class="pre">sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">varList</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['PotEng']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logfile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'log.lammps'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jobs/lammpsJob.html#lammpsJob.sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jobs.lammpsJob.lammpsJob.sample" title="Link to this definition"></a></dt>
+<dd><p>Sample averaged quantities from a LAMMPS log file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>varList</strong> (<em>list</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – Names of variables to sample (e.g., “PotEng”, “Temp”).</p></li>
+<li><p><strong>logfile</strong> (<em>str</em><em>, </em><em>optional</em>) – Name of the LAMMPS log file.</p></li>
+<li><p><strong>skip</strong> (<em>float</em><em>, </em><em>optional</em>) – Fraction of initial data to discard as equilibration.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Averaged values of the requested variables.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This method assumes standard LAMMPS thermo output format.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="jobs.lammpsJob.lammpsJob.set_arch">
+<span class="sig-name descname"><span class="pre">set_arch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arch</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jobs/lammpsJob.html#lammpsJob.set_arch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jobs.lammpsJob.lammpsJob.set_arch" title="Link to this definition"></a></dt>
+<dd><p>Set the architecture type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>arch</strong> (<em>str</em>) – Architecture identifier.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="jobs.lammpsJob.lammpsJobGroup">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">jobs.lammpsJob.</span></span><span class="sig-name descname"><span class="pre">lammpsJobGroup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">directory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'./'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jobs/lammpsJob.html#lammpsJobGroup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jobs.lammpsJob.lammpsJobGroup" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Define a group of LAMMPS jobs to be launched simultaneously.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>directory</strong> (<em>str</em><em>, </em><em>optional</em>) – Path to the group directory.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="jobs.lammpsJob.lammpsJobGroup.get_joblist">
+<span class="sig-name descname"><span class="pre">get_joblist</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/jobs/lammpsJob.html#lammpsJobGroup.get_joblist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jobs.lammpsJob.lammpsJobGroup.get_joblist" title="Link to this definition"></a></dt>
+<dd><p>Return the list of LAMMPS jobs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Job list.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list of <a class="reference internal" href="#jobs.lammpsJob.lammpsJob" title="jobs.lammpsJob.lammpsJob">lammpsJob</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="jobs.lammpsJob.lammpsPair">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">jobs.lammpsJob.</span></span><span class="sig-name descname"><span class="pre">lammpsPair</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pair_style</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pair_coeff</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jobs/lammpsJob.html#lammpsPair"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jobs.lammpsJob.lammpsPair" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Define an interatomic potential for LAMMPS.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pair_style</strong> (<em>str</em>) – LAMMPS pair_style command.</p></li>
+<li><p><strong>pair_coeff</strong> (<em>str</em><em> or </em><em>list</em><em> of </em><em>str</em>) – LAMMPS pair_coeff command(s).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="jobs.lammpsJob.lammpsPara">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">jobs.lammpsJob.</span></span><span class="sig-name descname"><span class="pre">lammpsPara</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">general</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jobs/lammpsJob.html#lammpsPara"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jobs.lammpsJob.lammpsPara" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Define general LAMMPS parameters from a dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>general</strong> (<em>dict</em>) – Dictionary containing LAMMPS parameters.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="jobs.lammpsJob.pre_process">
+<span class="sig-prename descclassname"><span class="pre">jobs.lammpsJob.</span></span><span class="sig-name descname"><span class="pre">pre_process</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">depend</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jobs/lammpsJob.html#pre_process"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jobs.lammpsJob.pre_process" title="Link to this definition"></a></dt>
+<dd><p>Pre-process a dependent job by sampling parameters from a pre-job.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>depend</strong> (<em>list</em>) – Dependency specification:
+- depend[0]: directory of the pre-job
+- depend[1]: variable names to be set
+- depend[2]: variables to sample</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Command-line arguments for LAMMPS variables.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="jobs.lammpsJob.reset_types">
+<span class="sig-prename descclassname"><span class="pre">jobs.lammpsJob.</span></span><span class="sig-name descname"><span class="pre">reset_types</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nab</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">natom</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jobs/lammpsJob.html#reset_types"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jobs.lammpsJob.reset_types" title="Link to this definition"></a></dt>
+<dd><p>Reset atomic types based on desired composition.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nab</strong> (<em>list</em><em> of </em><em>int</em>) – Number of atoms of each type.</p></li>
+<li><p><strong>natom</strong> (<em>int</em>) – Total number of atoms.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>LAMMPS commands to reset atom types.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+<section id="thermodynamic-integration-free-energy">
+<h2>Thermodynamic Integration &amp; Free Energy<a class="headerlink" href="#thermodynamic-integration-free-energy" title="Link to this heading"></a></h2>
+<section id="module-jobs.alchem">
+<span id="alchem"></span><h3>alchem<a class="headerlink" href="#module-jobs.alchem" title="Link to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="jobs.alchem.alchem">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">jobs.alchem.</span></span><span class="sig-name descname"><span class="pre">alchem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_in</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dlbd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref_pair</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nab</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">barostat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'iso'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jobs/alchem.html#alchem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jobs.alchem.alchem" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#jobs.lammpsJob.lammpsJobGroup" title="jobs.lammpsJob.lammpsJobGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">lammpsJobGroup</span></code></a></p>
+<p>Alchemical thermodynamic integration (TI) workflow using LAMMPS.</p>
+<p>This class constructs and manages a set of LAMMPS jobs along an
+alchemical path that interpolates between a reference potential
+and a target potential using a coupling parameter $lambda$.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data_in</strong> (<em>str</em>) – Initial liquid structure file in LAMMPS data format.</p></li>
+<li><p><strong>dlbd</strong> (<em>float</em>) – Increment of the alchemical coupling parameter $lambda$.</p></li>
+<li><p><strong>T</strong> (<em>float</em>) – Temperature of the simulation.</p></li>
+<li><p><strong>directory</strong> (<em>str</em>) – Path to the job group directory.</p></li>
+<li><p><strong>ref_pair</strong> (<a class="reference internal" href="#jobs.lammpsJob.lammpsPair" title="jobs.lammpsJob.lammpsPair"><em>lammpsPair</em></a><em>, </em><em>optional</em>) – Reference pair potential for thermodynamic integration.
+If None, a UFM reference is used.</p></li>
+<li><p><strong>nab</strong> (<em>list</em><em> of </em><em>int</em><em>, </em><em>optional</em>) – Number of atoms of each type [n1, n2, …]. If provided,
+atomic types in <cite>data_in</cite> will be reassigned.</p></li>
+<li><p><strong>barostat</strong> (<em>str</em><em>, </em><em>optional</em>) – Barostat type for NPT simulations. If set to <cite>“none”</cite>,
+NVT simulations are used.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="jobs.alchem.alchem.process">
+<span class="sig-name descname"><span class="pre">process</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">general</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jobs/alchem.html#alchem.process"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jobs.alchem.alchem.process" title="Link to this definition"></a></dt>
+<dd><p>Post-process completed TI jobs and compute the free energy change.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>general</strong> (<a class="reference internal" href="#jobs.lammpsJob.lammpsPara" title="jobs.lammpsJob.lammpsPara"><em>lammpsPara</em></a>) – General LAMMPS parameters.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Gibbs free energy difference.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="jobs.alchem.alchem.setup">
+<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">general</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depend</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jobs/alchem.html#alchem.setup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jobs.alchem.alchem.setup" title="Link to this definition"></a></dt>
+<dd><p>Set up LAMMPS jobs along the alchemical path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>general</strong> (<a class="reference internal" href="#jobs.lammpsJob.lammpsPara" title="jobs.lammpsJob.lammpsPara"><em>lammpsPara</em></a>) – General LAMMPS parameters and potential definitions.</p></li>
+<li><p><strong>depend</strong> (<em>list object</em>) – Dependency specification for the jobs.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="jobs.alchem.alchem.write_script">
+<span class="sig-name descname"><span class="pre">write_script</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scriptFile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">general</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lbd</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jobs/alchem.html#alchem.write_script"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jobs.alchem.alchem.write_script" title="Link to this definition"></a></dt>
+<dd><p>Write a LAMMPS input script for a given $lambda$ value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>scriptFile</strong> (<em>str</em>) – Path to the LAMMPS input script to be written.</p></li>
+<li><p><strong>general</strong> (<a class="reference internal" href="#jobs.lammpsJob.lammpsPara" title="jobs.lammpsJob.lammpsPara"><em>lammpsPara</em></a>) – General LAMMPS parameters.</p></li>
+<li><p><strong>lbd</strong> (<em>float</em>) – Alchemical coupling parameter λ.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-jobs.einstein">
+<span id="einstein"></span><h3>einstein<a class="headerlink" href="#module-jobs.einstein" title="Link to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="jobs.einstein.einstein">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">jobs.einstein.</span></span><span class="sig-name descname"><span class="pre">einstein</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_in</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dlbd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'./'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jobs/einstein.html#einstein"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jobs.einstein.einstein" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#jobs.lammpsJob.lammpsJobGroup" title="jobs.lammpsJob.lammpsJobGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">lammpsJobGroup</span></code></a></p>
+<p>Frenkel–Ladd thermodynamic integration using an Einstein crystal reference.</p>
+<p>This class implements the Frenkel–Ladd method to compute the absolute
+free energy of a solid by thermodynamic integration between the
+interacting system and an Einstein crystal.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data_in</strong> (<em>str</em>) – Initial structure file in LAMMPS data format.</p></li>
+<li><p><strong>dlbd</strong> (<em>float</em>) – Increment of the coupling parameter $lambda$.</p></li>
+<li><p><strong>T</strong> (<em>float</em>) – Temperature of the simulation.</p></li>
+<li><p><strong>directory</strong> (<em>str</em><em>, </em><em>optional</em>) – Path to the job group directory.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="jobs.einstein.einstein.process">
+<span class="sig-name descname"><span class="pre">process</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">general</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depend</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jobs/einstein.html#einstein.process"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jobs.einstein.einstein.process" title="Link to this definition"></a></dt>
+<dd><p>Post-process completed jobs and compute the absolute free energy.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>general</strong> (<a class="reference internal" href="#jobs.lammpsJob.lammpsPara" title="jobs.lammpsJob.lammpsPara"><em>lammpsPara</em></a>) – General LAMMPS parameters.</p></li>
+<li><p><strong>depend</strong> (<em>list object</em>) – Dependency specification used for MSD sampling.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Absolute Helmholtz free energy per atom.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="jobs.einstein.einstein.setup">
+<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">general</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">barostat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depend</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jobs/einstein.html#einstein.setup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jobs.einstein.einstein.setup" title="Link to this definition"></a></dt>
+<dd><p>Set up thermodynamic integration jobs for the Einstein crystal path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>general</strong> (<a class="reference internal" href="#jobs.lammpsJob.lammpsPara" title="jobs.lammpsJob.lammpsPara"><em>lammpsPara</em></a>) – General LAMMPS parameters.</p></li>
+<li><p><strong>barostat</strong> (<em>str</em>) – Barostat type (“iso”, “tri”, etc.).</p></li>
+<li><p><strong>depend</strong> (<em>list object</em>) – Dependency specification for the jobs.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="jobs.einstein.einstein.write_script">
+<span class="sig-name descname"><span class="pre">write_script</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scriptFile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">general</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lbd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">barostat</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jobs/einstein.html#einstein.write_script"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jobs.einstein.einstein.write_script" title="Link to this definition"></a></dt>
+<dd><p>Write a LAMMPS input script for a given $lambda value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>scriptFile</strong> (<em>str</em>) – Path to the LAMMPS input script to be written.</p></li>
+<li><p><strong>general</strong> (<a class="reference internal" href="#jobs.lammpsJob.lammpsPara" title="jobs.lammpsJob.lammpsPara"><em>lammpsPara</em></a>) – General LAMMPS parameters.</p></li>
+<li><p><strong>lbd</strong> (<em>float</em>) – Coupling parameter $lambda$.</p></li>
+<li><p><strong>barostat</strong> (<em>str</em>) – Barostat type.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-jobs.tramp">
+<span id="tramp"></span><h3>tramp<a class="headerlink" href="#module-jobs.tramp" title="Link to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="jobs.tramp.tramp">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">jobs.tramp.</span></span><span class="sig-name descname"><span class="pre">tramp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_in</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Tlist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nab</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">barostat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'iso'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jobs/tramp.html#tramp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jobs.tramp.tramp" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#jobs.lammpsJob.lammpsJobGroup" title="jobs.lammpsJob.lammpsJobGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">lammpsJobGroup</span></code></a></p>
+<p>Temperature-ramping LAMMPS workflow for solid or liquid phases.</p>
+<p>This class sets up a series of independent LAMMPS simulations at
+different temperatures to equilibrate a structure and extract
+thermodynamic quantities such as enthalpy and volume.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data_in</strong> (<em>str</em>) – Initial structure file in LAMMPS data format.</p></li>
+<li><p><strong>Tlist</strong> (<em>list</em><em> of </em><em>float</em>) – List of temperatures at which to equilibrate the system.</p></li>
+<li><p><strong>directory</strong> (<em>str</em>) – Path to the group directory where job subfolders are created.</p></li>
+<li><p><strong>nab</strong> (<em>list</em><em> of </em><em>int</em><em>, </em><em>optional</em>) – Number of atoms of each type [n1, n2, …]. If provided, atomic
+types in <cite>data_in</cite> will be reassigned accordingly.</p></li>
+<li><p><strong>barostat</strong> (<em>str</em><em>, </em><em>optional</em>) – Barostat type for NPT simulations. If set to <cite>“none”</cite>, the script
+still writes an <cite>npt</cite> fix line but without barostat coupling.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="jobs.tramp.tramp.process">
+<span class="sig-name descname"><span class="pre">process</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/jobs/tramp.html#tramp.process"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jobs.tramp.tramp.process" title="Link to this definition"></a></dt>
+<dd><p>Post-process temperature-ramping simulations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Array of shape (N_T, 2) containing temperature and
+averaged enthalpy values [[T1, H1], [T2, H2], …].</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="jobs.tramp.tramp.setup">
+<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">general</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boxdims</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">msd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jobs/tramp.html#tramp.setup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jobs.tramp.tramp.setup" title="Link to this definition"></a></dt>
+<dd><p>Set up temperature-ramping LAMMPS jobs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>general</strong> (<a class="reference internal" href="#jobs.lammpsJob.lammpsPara" title="jobs.lammpsJob.lammpsPara"><em>lammpsPara</em></a>) – General LAMMPS parameters (units, pair potential, neighbor settings,
+masses, timestep, thermo frequency, pressure, Tdamp/Pdamp, run length).</p></li>
+<li><p><strong>boxdims</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, output detailed box dimensions (xlo/xhi, etc.) instead of
+only volume. Default is False.</p></li>
+<li><p><strong>msd</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, compute mean-squared displacement (MSD) for each atomic
+species. Default is False.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="jobs.tramp.tramp.write_script">
+<span class="sig-name descname"><span class="pre">write_script</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scriptFile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">general</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boxdims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">msd</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jobs/tramp.html#tramp.write_script"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jobs.tramp.tramp.write_script" title="Link to this definition"></a></dt>
+<dd><p>Write a LAMMPS input script for equilibration at a single temperature.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>scriptFile</strong> (<em>str</em>) – Output path for the LAMMPS input script.</p></li>
+<li><p><strong>general</strong> (<a class="reference internal" href="#jobs.lammpsJob.lammpsPara" title="jobs.lammpsJob.lammpsPara"><em>lammpsPara</em></a>) – General LAMMPS parameters and pair potential definition.</p></li>
+<li><p><strong>T</strong> (<em>float</em>) – Temperature at which the system is equilibrated.</p></li>
+<li><p><strong>boxdims</strong> (<em>bool</em>) – Whether to output detailed box dimensions.</p></li>
+<li><p><strong>msd</strong> (<em>bool</em>) – Whether to compute mean-squared displacement (MSD).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+<section id="hybrid-monte-carlo-and-molecular-dynamics">
+<h2>Hybrid Monte Carlo and Molecular Dynamics<a class="headerlink" href="#hybrid-monte-carlo-and-molecular-dynamics" title="Link to this heading"></a></h2>
+<section id="module-jobs.sgmc">
+<span id="sgmc"></span><h3>sgmc<a class="headerlink" href="#module-jobs.sgmc" title="Link to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="jobs.sgmc.sgmc_simulator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">jobs.sgmc.</span></span><span class="sig-name descname"><span class="pre">sgmc_simulator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_in</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Tlist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">barostat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'iso'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jobs/sgmc.html#sgmc_simulator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jobs.sgmc.sgmc_simulator" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#jobs.lammpsJob.lammpsJobGroup" title="jobs.lammpsJob.lammpsJobGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">lammpsJobGroup</span></code></a></p>
+<p>Set up LAMMPS jobs for semi-grand canonical Monte Carlo (SGMC) simulations.</p>
+<p>This class generates a grid of LAMMPS simulations over temperature and
+chemical potential difference (mu_B - mu_A) for solid solutions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data_in</strong> (<em>str</em>) – Initial structure file in LAMMPS data format.</p></li>
+<li><p><strong>Tlist</strong> (<em>list</em><em> of </em><em>float</em>) – List of temperatures to run simulations at.</p></li>
+<li><p><strong>mu_list</strong> (<em>list</em><em> of </em><em>float</em>) – List of chemical potential differences (mu_B - mu_A).</p></li>
+<li><p><strong>directory</strong> (<em>str</em>) – Path to the group directory where job subfolders are created.</p></li>
+<li><p><strong>barostat</strong> (<em>str</em><em>, </em><em>optional</em>) – Barostat type for NPT. If “none”, the script attempts to run without
+barostat contribution in <cite>baro_style</cite> (though the current script still
+writes an <cite>npt</cite> fix line).</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="jobs.sgmc.sgmc_simulator.setup">
+<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">general</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jobs/sgmc.html#sgmc_simulator.setup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jobs.sgmc.sgmc_simulator.setup" title="Link to this definition"></a></dt>
+<dd><p>Create job directories and LAMMPS input scripts for all (T, mu) points.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>general</strong> (<a class="reference internal" href="#jobs.lammpsJob.lammpsPara" title="jobs.lammpsJob.lammpsPara"><em>lammpsPara</em></a>) – General LAMMPS parameters (units, pair potential, neighbor settings,
+masses, timestep, thermo frequency, pressure, Tdamp/Pdamp, run length).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="jobs.sgmc.sgmc_simulator.write_script">
+<span class="sig-name descname"><span class="pre">write_script</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scriptFile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">general</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jobs/sgmc.html#sgmc_simulator.write_script"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jobs.sgmc.sgmc_simulator.write_script" title="Link to this definition"></a></dt>
+<dd><p>Write a LAMMPS input script for a given temperature and chemical potential.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>scriptFile</strong> (<em>str</em>) – Output path for the LAMMPS input script.</p></li>
+<li><p><strong>general</strong> (<a class="reference internal" href="#jobs.lammpsJob.lammpsPara" title="jobs.lammpsJob.lammpsPara"><em>lammpsPara</em></a>) – General LAMMPS parameters and pair potential definition.</p></li>
+<li><p><strong>T</strong> (<em>float</em>) – Temperature for the simulation.</p></li>
+<li><p><strong>mu</strong> (<em>float</em>) – Chemical potential difference (mu_B - mu_A) used in the SGMC swap fix.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The script uses:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">fix</span> <span class="pre">npt</span></code> for temperature/pressure control (with barostat style
+determined by <code class="docutils literal notranslate"><span class="pre">self._barostat</span></code>), and</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fix</span> <span class="pre">atom/swap</span> <span class="pre">...</span> <span class="pre">semi-grand</span> <span class="pre">yes</span> <span class="pre">...</span> <span class="pre">mu</span> <span class="pre">0</span> <span class="pre">{mu}</span></code> to perform SGMC swaps
+between types 1 and 2.</p></li>
+</ul>
+<p>Thermo output includes swap acceptance counters <code class="docutils literal notranslate"><span class="pre">f_2[1]</span></code>, <code class="docutils literal notranslate"><span class="pre">f_2[2]</span></code> and
+the type populations <code class="docutils literal notranslate"><span class="pre">c_typevec[1]</span></code>, <code class="docutils literal notranslate"><span class="pre">c_typevec[2]</span></code>.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+<section id="solid-liquid-coexistence">
+<h2>Solid Liquid Coexistence<a class="headerlink" href="#solid-liquid-coexistence" title="Link to this heading"></a></h2>
+<section id="module-jobs.sli">
+<span id="sli"></span><h3>sli<a class="headerlink" href="#module-jobs.sli" title="Link to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="jobs.sli.sli_simulator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">jobs.sli.</span></span><span class="sig-name descname"><span class="pre">sli_simulator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_in</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Tlist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Tmelt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">replicate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">orient</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'z'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">barostat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'iso'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jobs/sli.html#sli_simulator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jobs.sli.sli_simulator" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#jobs.lammpsJob.lammpsJobGroup" title="jobs.lammpsJob.lammpsJobGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">lammpsJobGroup</span></code></a></p>
+<p>Set up LAMMPS jobs for solid–liquid interface (SLI) simulations.</p>
+<p>This workflow prepares and runs a sequence of MD stages to create a
+solid–liquid interface:
+1) pre-equilibrate whole system at target temperature,
+2) melt half of the simulation box by heating only the “liquid” region,
+3) cool the melted region back to the target temperature,
+4) re-equilibrate using a uniaxial barostat along the chosen orientation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data_in</strong> (<em>str</em>) – Initial structure file in LAMMPS data format.</p></li>
+<li><p><strong>Tlist</strong> (<em>list</em><em> of </em><em>float</em>) – Temperatures to run the interface preparation/equilibration at.</p></li>
+<li><p><strong>Tmelt</strong> (<em>float</em>) – High temperature used to melt half of the box.</p></li>
+<li><p><strong>directory</strong> (<em>str</em>) – Path to the group directory where job subfolders are created.</p></li>
+<li><p><strong>replicate</strong> (<em>int</em><em>, </em><em>optional</em>) – Replication factor along the interface orientation direction.
+Default is 2.</p></li>
+<li><p><strong>orient</strong> (<em>{&quot;x&quot;</em><em>, </em><em>&quot;y&quot;</em><em>, </em><em>&quot;z&quot;}</em><em>, </em><em>optional</em>) – Direction along which the system is replicated and along which the
+liquid-half region is defined. Default is “z”.</p></li>
+<li><p><strong>barostat</strong> (<em>str</em><em>, </em><em>optional</em>) – Barostat style for the pre-equilibration stage. If “none”, the script
+writes an NPT fix with an empty barostat style string (current behavior).
+Default is “iso”.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="jobs.sli.sli_simulator.setup">
+<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">general</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jobs/sli.html#sli_simulator.setup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jobs.sli.sli_simulator.setup" title="Link to this definition"></a></dt>
+<dd><p>Create job directories and LAMMPS input scripts for all temperatures.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>general</strong> (<a class="reference internal" href="#jobs.lammpsJob.lammpsPara" title="jobs.lammpsJob.lammpsPara"><em>lammpsPara</em></a>) – General LAMMPS parameters (units, pair potential, neighbor settings,
+masses, timestep, thermo frequency, pressure, Tdamp/Pdamp, run length).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="jobs.sli.sli_simulator.write_script">
+<span class="sig-name descname"><span class="pre">write_script</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scriptFile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">general</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jobs/sli.html#sli_simulator.write_script"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jobs.sli.sli_simulator.write_script" title="Link to this definition"></a></dt>
+<dd><p>Write a LAMMPS input script for solid–liquid interface preparation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>scriptFile</strong> (<em>str</em>) – Output path for the LAMMPS input script.</p></li>
+<li><p><strong>general</strong> (<a class="reference internal" href="#jobs.lammpsJob.lammpsPara" title="jobs.lammpsJob.lammpsPara"><em>lammpsPara</em></a>) – General LAMMPS parameters and pair potential definition.</p></li>
+<li><p><strong>T</strong> (<em>float</em>) – Target temperature for the interface simulation.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The script defines a <cite>liquid</cite> group as half of the simulation box
+along the chosen orientation (<cite>self._orient</cite>). It then runs several
+stages:
+- Pre-equilibrate (whole box) using NPT at temperature <cite>T</cite>.
+- Heat only the <cite>liquid</cite> group from <cite>T</cite> to <cite>Tmelt</cite> using NVT.
+- Cool the <cite>liquid</cite> group back from <cite>Tmelt</cite> to <cite>T</cite> using NVT.
+- Reset velocities.
+- Final relaxation using uniaxial NPT along <cite>self._orient</cite>.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="tutorial.html" class="btn btn-neutral float-left" title="Tutorial" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright Copyright 2025. Iowa State University &amp; © 2025. Triad National Security, LLC.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

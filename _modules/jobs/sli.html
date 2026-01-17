@@ -1,0 +1,305 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>jobs.sli &mdash; exa-pd</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            exa-pd
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API Reference for exaPD</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">exa-pd</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">jobs.sli</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for jobs.sli</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jobs.lammpsJob</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tools.utils</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+
+
+<div class="viewcode-block" id="sli_simulator">
+<a class="viewcode-back" href="../../api.html#jobs.sli.sli_simulator">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">sli_simulator</span><span class="p">(</span><span class="n">lammpsJobGroup</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Set up LAMMPS jobs for solid–liquid interface (SLI) simulations.</span>
+
+<span class="sd">    This workflow prepares and runs a sequence of MD stages to create a</span>
+<span class="sd">    solid–liquid interface:</span>
+<span class="sd">    1) pre-equilibrate whole system at target temperature,</span>
+<span class="sd">    2) melt half of the simulation box by heating only the &quot;liquid&quot; region,</span>
+<span class="sd">    3) cool the melted region back to the target temperature,</span>
+<span class="sd">    4) re-equilibrate using a uniaxial barostat along the chosen orientation.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data_in : str</span>
+<span class="sd">        Initial structure file in LAMMPS data format.</span>
+<span class="sd">    Tlist : list of float</span>
+<span class="sd">        Temperatures to run the interface preparation/equilibration at.</span>
+<span class="sd">    Tmelt : float</span>
+<span class="sd">        High temperature used to melt half of the box.</span>
+<span class="sd">    directory : str</span>
+<span class="sd">        Path to the group directory where job subfolders are created.</span>
+<span class="sd">    replicate : int, optional</span>
+<span class="sd">        Replication factor along the interface orientation direction.</span>
+<span class="sd">        Default is 2.</span>
+<span class="sd">    orient : {&quot;x&quot;, &quot;y&quot;, &quot;z&quot;}, optional</span>
+<span class="sd">        Direction along which the system is replicated and along which the</span>
+<span class="sd">        liquid-half region is defined. Default is &quot;z&quot;.</span>
+<span class="sd">    barostat : str, optional</span>
+<span class="sd">        Barostat style for the pre-equilibration stage. If &quot;none&quot;, the script</span>
+<span class="sd">        writes an NPT fix with an empty barostat style string (current behavior).</span>
+<span class="sd">        Default is &quot;iso&quot;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">data_in</span><span class="p">,</span>
+                 <span class="n">Tlist</span><span class="p">,</span>
+                 <span class="n">Tmelt</span><span class="p">,</span>
+                 <span class="n">directory</span><span class="p">,</span>
+                 <span class="n">replicate</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                 <span class="n">orient</span><span class="o">=</span><span class="s2">&quot;z&quot;</span><span class="p">,</span>
+                 <span class="n">barostat</span><span class="o">=</span><span class="s2">&quot;iso&quot;</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_datain</span> <span class="o">=</span> <span class="n">data_in</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_Tlist</span> <span class="o">=</span> <span class="n">Tlist</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_Tmelt</span> <span class="o">=</span> <span class="n">Tmelt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_barostat</span> <span class="o">=</span> <span class="n">barostat</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_replic</span> <span class="o">=</span> <span class="n">replicate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_orient</span> <span class="o">=</span> <span class="n">orient</span>
+        <span class="n">natom</span><span class="p">,</span> <span class="n">ntyp</span><span class="p">,</span> <span class="n">nab</span> <span class="o">=</span> <span class="n">read_lmp_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_datain</span><span class="p">,</span> <span class="n">read_nab</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_natom</span> <span class="o">=</span> <span class="n">natom</span> <span class="o">*</span> <span class="n">replicate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ntyp</span> <span class="o">=</span> <span class="n">ntyp</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nab</span> <span class="o">=</span> <span class="n">nab</span> <span class="o">*</span> <span class="n">replicate</span>
+
+<div class="viewcode-block" id="sli_simulator.setup">
+<a class="viewcode-back" href="../../api.html#jobs.sli.sli_simulator.setup">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">general</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create job directories and LAMMPS input scripts for all temperatures.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        general : lammpsPara</span>
+<span class="sd">            General LAMMPS parameters (units, pair potential, neighbor settings,</span>
+<span class="sd">            masses, timestep, thermo frequency, pressure, Tdamp/Pdamp, run length).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">natom</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_natom</span>
+        <span class="k">for</span> <span class="n">T</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_Tlist</span><span class="p">:</span>
+            <span class="n">Tdir</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_dir</span><span class="si">}</span><span class="s2">/T</span><span class="si">{</span><span class="n">T</span><span class="si">:</span><span class="s2">g</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">scriptFile</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">Tdir</span><span class="si">}</span><span class="s2">/lmp.in&quot;</span>
+            <span class="n">job</span> <span class="o">=</span> <span class="n">lammpsJob</span><span class="p">(</span><span class="n">directory</span><span class="o">=</span><span class="n">Tdir</span><span class="p">,</span>
+                            <span class="n">scriptFile</span><span class="o">=</span><span class="n">scriptFile</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">scriptFile</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">write_script</span><span class="p">(</span><span class="n">job</span><span class="o">.</span><span class="n">_script</span><span class="p">,</span> <span class="n">general</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_jobList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">job</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="sli_simulator.write_script">
+<a class="viewcode-back" href="../../api.html#jobs.sli.sli_simulator.write_script">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_script</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scriptFile</span><span class="p">,</span> <span class="n">general</span><span class="p">,</span> <span class="n">T</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Write a LAMMPS input script for solid–liquid interface preparation.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        scriptFile : str</span>
+<span class="sd">            Output path for the LAMMPS input script.</span>
+<span class="sd">        general : lammpsPara</span>
+<span class="sd">            General LAMMPS parameters and pair potential definition.</span>
+<span class="sd">        T : float</span>
+<span class="sd">            Target temperature for the interface simulation.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        The script defines a `liquid` group as half of the simulation box</span>
+<span class="sd">        along the chosen orientation (`self._orient`). It then runs several</span>
+<span class="sd">        stages:</span>
+<span class="sd">        - Pre-equilibrate (whole box) using NPT at temperature `T`.</span>
+<span class="sd">        - Heat only the `liquid` group from `T` to `Tmelt` using NVT.</span>
+<span class="sd">        - Cool the `liquid` group back from `Tmelt` to `T` using NVT.</span>
+<span class="sd">        - Reset velocities.</span>
+<span class="sd">        - Final relaxation using uniaxial NPT along `self._orient`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">scriptFile</span><span class="p">,</span> <span class="s1">&#39;wt&#39;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;#  SLI simulation for T = </span><span class="si">{</span><span class="n">T</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;units           </span><span class="si">{</span><span class="n">general</span><span class="o">.</span><span class="n">units</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;boundary        p p p</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;atom_style      atomic</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;atom_modify     map array</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;read_data       </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_datain</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_orient</span> <span class="o">==</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;replicate       </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_replic</span><span class="si">}</span><span class="s2"> 1 1</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;variable        xmid equal (xlo+xhi)/2</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+                <span class="s2">&quot;region          liqhalf block $</span><span class="si">{xmid}</span><span class="s2"> $(xhi) INF INF INF INF</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_orient</span> <span class="o">==</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;replicate       1 </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_replic</span><span class="si">}</span><span class="s2"> 1</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;variable        ymid equal (ylo+yhi)/2</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+                <span class="s2">&quot;region          liqhalf block INF INF $</span><span class="si">{ymid}</span><span class="s2"> $(yhi) INF INF</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;replicate       1 1 </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_replic</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;variable        zmid equal (zlo+zhi)/2</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+                <span class="s2">&quot;region          liqhalf block INF INF INF INF $</span><span class="si">{zmid}</span><span class="s2"> $(zhi)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;group           liquid region liqhalf</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">general</span><span class="o">.</span><span class="n">pair</span><span class="o">.</span><span class="n">_cmd</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">general</span><span class="o">.</span><span class="n">neighbor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;neighbor        </span><span class="si">{</span><span class="n">general</span><span class="o">.</span><span class="n">neighbor</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;neigh_modify    </span><span class="si">{</span><span class="n">general</span><span class="o">.</span><span class="n">neigh_modify</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">general</span><span class="o">.</span><span class="n">mass</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">general</span><span class="o">.</span><span class="n">mass</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">general</span><span class="o">.</span><span class="n">mass</span><span class="p">)):</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;mass            </span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">general</span><span class="o">.</span><span class="n">mass</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;mass            * </span><span class="si">{</span><span class="n">general</span><span class="o">.</span><span class="n">mass</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;velocity        all create </span><span class="si">{</span><span class="n">T</span><span class="si">:</span><span class="s2">g</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1000000</span><span class="p">)</span><span class="si">}</span><span class="s2"> rot yes dist gaussian</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">general</span><span class="o">.</span><span class="n">timestep</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;timestep        </span><span class="si">{</span><span class="n">general</span><span class="o">.</span><span class="n">timestep</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;thermo          </span><span class="si">{</span><span class="n">general</span><span class="o">.</span><span class="n">thermo</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;thermo_style    custom step temp etotal press vol pe</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;thermo_modify   lost error norm yes</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;dump            1 all custom </span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="mf">0.01</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">general</span><span class="o">.</span><span class="n">run</span><span class="p">)</span><span class="si">}</span><span class="s2"> dump.atom id type xs ys zs</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;dump_modify     1 sort id</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_barostat</span> <span class="o">==</span> <span class="s2">&quot;none&quot;</span><span class="p">:</span>
+            <span class="n">baro_style</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">elif</span> <span class="s2">&quot;couple&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_barostat</span><span class="p">:</span>
+            <span class="n">baro_style</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_barostat</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">general</span><span class="o">.</span><span class="n">pressure</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">general</span><span class="o">.</span><span class="n">pressure</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">general</span><span class="o">.</span><span class="n">Pdamp</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">baro_style</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;x </span><span class="si">{</span><span class="n">general</span><span class="o">.</span><span class="n">pressure</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">general</span><span class="o">.</span><span class="n">pressure</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">general</span><span class="o">.</span><span class="n">Pdamp</span><span class="si">}</span><span class="s2"> &quot;</span>\
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;y </span><span class="si">{</span><span class="n">general</span><span class="o">.</span><span class="n">pressure</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">general</span><span class="o">.</span><span class="n">pressure</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">general</span><span class="o">.</span><span class="n">Pdamp</span><span class="si">}</span><span class="s2"> &quot;</span>\
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;z </span><span class="si">{</span><span class="n">general</span><span class="o">.</span><span class="n">pressure</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">general</span><span class="o">.</span><span class="n">pressure</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">general</span><span class="o">.</span><span class="n">Pdamp</span><span class="si">}</span><span class="s2"> &quot;</span>\
+                <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_barostat</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;# pre-equilibrate</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;fix             1 all npt temp </span><span class="si">{</span><span class="n">T</span><span class="si">:</span><span class="s2">g</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">T</span><span class="si">:</span><span class="s2">g</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">general</span><span class="o">.</span><span class="n">Tdamp</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">baro_style</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;run             </span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="mf">0.1</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">general</span><span class="o">.</span><span class="n">run</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;unfix           1</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;# melt the liquid side</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;fix             2 liquid nvt temp </span><span class="si">{</span><span class="n">T</span><span class="si">:</span><span class="s2">g</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_Tmelt</span><span class="si">:</span><span class="s2">g</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">general</span><span class="o">.</span><span class="n">Tdamp</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;run             </span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="mf">0.5</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">general</span><span class="o">.</span><span class="n">run</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;unfix           2</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;# cool the liquid side</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;fix             3 liquid nvt temp </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_Tmelt</span><span class="si">:</span><span class="s2">g</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">T</span><span class="si">:</span><span class="s2">g</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">general</span><span class="o">.</span><span class="n">Tdamp</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;run             </span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="mf">0.005</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">general</span><span class="o">.</span><span class="n">run</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;unfix           3</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;# reset velocity to remove drifting</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;velocity        all create </span><span class="si">{</span><span class="n">T</span><span class="si">:</span><span class="s2">g</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1000000</span><span class="p">)</span><span class="si">}</span><span class="s2"> rot yes dist gaussian</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;# release the whole system using uni-axial barostat</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;fix             4 all npt temp </span><span class="si">{</span><span class="n">T</span><span class="si">:</span><span class="s2">g</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">T</span><span class="si">:</span><span class="s2">g</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">general</span><span class="o">.</span><span class="n">Tdamp</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_orient</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">general</span><span class="o">.</span><span class="n">pressure</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">general</span><span class="o">.</span><span class="n">pressure</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">general</span><span class="o">.</span><span class="n">Pdamp</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;run             </span><span class="si">{</span><span class="n">general</span><span class="o">.</span><span class="n">run</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright Copyright 2025. Iowa State University &amp; © 2025. Triad National Security, LLC.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

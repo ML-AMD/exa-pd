@@ -1,0 +1,220 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorial &mdash; exa-pd</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=01f34227"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="_static/copybutton.js?v=f281be69"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="API Reference for exaPD" href="api.html" />
+    <link rel="prev" title="Quickstart" href="quickstart.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            exa-pd
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#clone-the-repository">1. Clone the Repository</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#install-dependencies">2. Install Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#prepare-the-data-and-lammps-setup">3. Prepare the Data and LAMMPS Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#prepare-the-parsl-configuration">3. Prepare the Parsl Configuration</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#a-change-the-registration-name">a. Change the registration name</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#b-update-each-executor">b. Update each executor</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#prepare-the-json-input-file">5. Prepare the JSON Input File</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#run-the-workflow">6. Run the Workflow</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference for exaPD</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">exa-pd</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Tutorial</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/tutorial.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tutorial">
+<h1>Tutorial<a class="headerlink" href="#tutorial" title="Link to this heading"></a></h1>
+<p>This tutorial demonstrates how to build and run <strong>exa-PD</strong> on both the GPU and CPU partitions of the <a class="reference external" href="https://docs.nersc.gov/systems/perlmutter/architecture/">Perlmutter supercomputer</a> to construct the phase diagram for the Cu-Zr system.</p>
+<section id="clone-the-repository">
+<h2>1. Clone the Repository<a class="headerlink" href="#clone-the-repository" title="Link to this heading"></a></h2>
+<p>Start by cloning the <cite>exa-PD</cite> repository:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/ML-AMD/exa-pd.git
+<span class="nb">cd</span><span class="w"> </span>exa-pd
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="install-dependencies">
+<h2>2. Install Dependencies<a class="headerlink" href="#install-dependencies" title="Link to this heading"></a></h2>
+<p>If you use <a class="reference external" href="https://docs.conda.io/en/latest/miniconda.html">Conda</a> to manage
+Python packages, you may create a conda environment to install the required
+packages using the <code class="docutils literal notranslate"><span class="pre">amd_env.yml</span></code> file we provide:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>amd_env.yml
+conda<span class="w"> </span>activate<span class="w"> </span>amd_env
+</pre></div>
+</div>
+</section>
+<section id="prepare-the-data-and-lammps-setup">
+<h2>3. Prepare the Data and LAMMPS Setup<a class="headerlink" href="#prepare-the-data-and-lammps-setup" title="Link to this heading"></a></h2>
+<p>Ensure you have a working <a class="reference external" href="https://www.lammps.org/">LAMMPS</a> installation. If you will be using a neural network potential (NNP), make sure that the necessary package supporting the NNP is installed in LAMMPS. For example, if you use a NNP trained by DeepMD-kit, you will need to install <a class="reference external" href="https://github.com/deepmodeling/deepmd-kit">DeepMD-kit</a> and have LAMMPS compiled with USER-DP package enabled. You can also use the pre-compiled lmp executable that ususally comes with the DeepMD-kit installation.</p>
+<p>Next, copy the folder that contains the crystal structures of the Cu-Zr solid phases:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cp<span class="w"> </span>-r<span class="w"> </span>example/phases/<span class="w"> </span>./
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="prepare-the-parsl-configuration">
+<h2>3. Prepare the Parsl Configuration<a class="headerlink" href="#prepare-the-parsl-configuration" title="Link to this heading"></a></h2>
+<p>Parsl configurations must be placed inside the <code class="docutils literal notranslate"><span class="pre">parsl_configs/</span></code> directory so that they can be automatically discovered by exa-PD at runtime.</p>
+<p>Start by copying the default Perlmutter configuration:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cp<span class="w"> </span>parsl_configs/perlmutter.py<span class="w"> </span>parsl_configs/my_perlmutter.py
+</pre></div>
+</div>
+<p>Then edit <cite>my_perlmutter.py</cite> and <cite>config_registry.py</cite>:</p>
+<section id="a-change-the-registration-name">
+<h3>a. Change the registration name<a class="headerlink" href="#a-change-the-registration-name" title="Link to this heading"></a></h3>
+<p>At the top of <cite>config_registry.py</cite>, update <cite>CONFIG_REGISTRY</cite> to reflect the new config name. This value <strong>have to match</strong> the value you will set in your JSON config file (the <code class="docutils literal notranslate"><span class="pre">run</span></code> field).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Before:</span>
+<span class="n">CONFIG_REGISTRY</span> <span class="o">=</span> <span class="p">{</span>
+ <span class="s2">&quot;perlmutter&quot;</span><span class="p">:</span> <span class="s2">&quot;parsl_configs.perlmutter.PerlmutterConfig&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="c1"># After:</span>
+<span class="n">CONFIG_REGISTRY</span> <span class="o">=</span> <span class="p">{</span>
+ <span class="s2">&quot;my_perlmutter&quot;</span><span class="p">:</span> <span class="s2">&quot;parsl_configs.my_perlmutter.PerlmutterConfig&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="b-update-each-executor">
+<h3>b. Update each executor<a class="headerlink" href="#b-update-each-executor" title="Link to this heading"></a></h3>
+<p>The Perlmutter configuration defines <strong>two separate executors</strong>: one that runs on <strong>GPU nodes</strong> and the other on <strong>CPU nodes</strong></p>
+<p>For each executor, update the following fields in the <cite>SlurmProvider</cite>:</p>
+<ul class="simple">
+<li><p><cite>max_blocks</cite>: The maximum number of Slurm jobs that Parsl is allowed to create for that provider. It is not a lifetime cap, it’s a concurrent cap. It only limits how many blocks (Slurm jobs) can exist at the same time. If one job finishes, Parsl is free to submit another job, as long as the total number of active blocks never exceeds <cite>max_blocks</cite>.</p></li>
+<li><p><cite>wall_time</cite>: It specifies the maximum run time requested for each Slurm job allocation (block). It directly maps to Slurm’s –time option.</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="prepare-the-json-input-file">
+<h2>5. Prepare the JSON Input File<a class="headerlink" href="#prepare-the-json-input-file" title="Link to this heading"></a></h2>
+<p>Copy the default input file:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cp<span class="w"> </span>configs/input.json<span class="w"> </span>configs/my_input.json
+</pre></div>
+</div>
+<p>Edit the following fields in <cite>my_input.json</cite>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">dir:</span></code> Path to the root directory of the project for running the calculations. Default is the current directory.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pair_coeff:</span></code> The pair coeff associated with the pair style in LAMMPS syntax. The path to the potential file should be changed to the absolute path.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ngpu:</span></code> The number of nodes required for each GPU slurm job submitted by Parsl. Default is 1.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ncpu:</span></code> The number of nodes required for each CPU slurm job submitted by Parsl. Default is 1.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">gpu_account:</span></code> The allocation or account name to be used when submitting GPU jobs (e.g., “m1234”).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cpu_account:</span></code> The allocation or account name to be used when submitting CPU jobs (e.g., “m1234”).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">gpu_exe:</span></code> The executable command or absolute path to run LAMMPS on GPU resources.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cpu_exe:</span></code> The executable command or absolute path to run LAMMPS on CPU resources.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">parsl_config:</span></code> The Parsl configuration profile that specifies how jobs are launched and resources are allocated. This value <strong>have to match</strong> the value in <cite>config_registry.py</cite> (e.g., “my_perlmutter”)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">qos:</span></code> The quality-of-service (QOS) flag to control scheduling priority (e.g., “regular”, “premium”).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">data_in:</span></code> Input data file for the liquid structure in the atom style of the LAMMPS data format.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ref_pair_style</span> <span class="pre">and</span> <span class="pre">ref_pair_ceoff:</span></code> The pair style and coefficient defining the reference system.</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="run-the-workflow">
+<h2>6. Run the Workflow<a class="headerlink" href="#run-the-workflow" title="Link to this heading"></a></h2>
+<p>Run the full exa-PD workflow from a login node of Perlmutter:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">PYTHONPATH</span><span class="o">=</span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>:<span class="nv">$PYTHONPATH</span>
+python<span class="w"> </span>run.py<span class="w"> </span>--config<span class="w"> </span>configs/my_input.json
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="quickstart.html" class="btn btn-neutral float-left" title="Quickstart" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="api.html" class="btn btn-neutral float-right" title="API Reference for exaPD" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright Copyright 2025. Iowa State University &amp; © 2025. Triad National Security, LLC.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

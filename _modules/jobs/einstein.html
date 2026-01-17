@@ -1,0 +1,371 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>jobs.einstein &mdash; exa-pd</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            exa-pd
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API Reference for exaPD</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">exa-pd</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">jobs.einstein</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for jobs.einstein</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jobs.lammpsJob</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tools.utils</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tools.logging_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">exapd_logger</span>
+
+
+<div class="viewcode-block" id="einstein">
+<a class="viewcode-back" href="../../api.html#jobs.einstein.einstein">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">einstein</span><span class="p">(</span><span class="n">lammpsJobGroup</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Frenkel–Ladd thermodynamic integration using an Einstein crystal reference.</span>
+
+<span class="sd">    This class implements the Frenkel–Ladd method to compute the absolute</span>
+<span class="sd">    free energy of a solid by thermodynamic integration between the</span>
+<span class="sd">    interacting system and an Einstein crystal.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data_in : str</span>
+<span class="sd">        Initial structure file in LAMMPS data format.</span>
+<span class="sd">    dlbd : float</span>
+<span class="sd">        Increment of the coupling parameter $lambda$.</span>
+<span class="sd">    T : float</span>
+<span class="sd">        Temperature of the simulation.</span>
+<span class="sd">    directory : str, optional</span>
+<span class="sd">        Path to the job group directory.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">data_in</span><span class="p">,</span>
+                 <span class="n">dlbd</span><span class="p">,</span>
+                 <span class="n">T</span><span class="p">,</span>
+                 <span class="n">directory</span><span class="o">=</span><span class="s2">&quot;./&quot;</span><span class="p">):</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_datain</span> <span class="o">=</span> <span class="n">data_in</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dlbd</span> <span class="o">=</span> <span class="n">dlbd</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lbdList</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span> <span class="o">+</span> <span class="mf">0.1</span> <span class="o">*</span> <span class="n">dlbd</span><span class="p">,</span> <span class="n">dlbd</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lbdList</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.01</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lbdList</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.99</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_T</span> <span class="o">=</span> <span class="n">T</span>
+        <span class="n">natom</span><span class="p">,</span> <span class="n">ntyp</span><span class="p">,</span> <span class="n">nab</span> <span class="o">=</span> <span class="n">read_lmp_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_datain</span><span class="p">,</span> <span class="n">read_nab</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_natom</span> <span class="o">=</span> <span class="n">natom</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ntyp</span> <span class="o">=</span> <span class="n">ntyp</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nab</span> <span class="o">=</span> <span class="n">nab</span>
+
+<div class="viewcode-block" id="einstein.setup">
+<a class="viewcode-back" href="../../api.html#jobs.einstein.einstein.setup">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">general</span><span class="p">,</span> <span class="n">barostat</span><span class="p">,</span> <span class="n">depend</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set up thermodynamic integration jobs for the Einstein crystal path.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        general : lammpsPara</span>
+<span class="sd">            General LAMMPS parameters.</span>
+<span class="sd">        barostat : str</span>
+<span class="sd">            Barostat type (&quot;iso&quot;, &quot;tri&quot;, etc.).</span>
+<span class="sd">        depend : list object</span>
+<span class="sd">            Dependency specification for the jobs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">natom</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_natom</span>
+        <span class="n">nlbd</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dlbd</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">dU</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># only used in post processing</span>
+        <span class="k">for</span> <span class="n">ilbd</span><span class="p">,</span> <span class="n">lbd</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_lbdList</span><span class="p">):</span>
+            <span class="n">jobdir</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_dir</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">ilbd</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">scriptFile</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">jobdir</span><span class="si">}</span><span class="s2">/lmp.in&quot;</span>
+            <span class="n">job</span> <span class="o">=</span> <span class="n">lammpsJob</span><span class="p">(</span><span class="n">directory</span><span class="o">=</span><span class="n">jobdir</span><span class="p">,</span>
+                            <span class="n">scriptFile</span><span class="o">=</span><span class="n">scriptFile</span><span class="p">,</span> <span class="n">arch</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">,</span>
+                            <span class="n">depend</span><span class="o">=</span><span class="n">depend</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">scriptFile</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">write_script</span><span class="p">(</span><span class="n">job</span><span class="o">.</span><span class="n">_script</span><span class="p">,</span> <span class="n">general</span><span class="p">,</span> <span class="n">lbd</span><span class="p">,</span> <span class="n">barostat</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_jobList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">job</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="einstein.write_script">
+<a class="viewcode-back" href="../../api.html#jobs.einstein.einstein.write_script">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_script</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scriptFile</span><span class="p">,</span> <span class="n">general</span><span class="p">,</span> <span class="n">lbd</span><span class="p">,</span> <span class="n">barostat</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Write a LAMMPS input script for a given $lambda value.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        scriptFile : str</span>
+<span class="sd">            Path to the LAMMPS input script to be written.</span>
+<span class="sd">        general : lammpsPara</span>
+<span class="sd">            General LAMMPS parameters.</span>
+<span class="sd">        lbd : float</span>
+<span class="sd">            Coupling parameter $lambda$.</span>
+<span class="sd">        barostat : str</span>
+<span class="sd">            Barostat type.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">scriptFile</span><span class="p">,</span> <span class="s1">&#39;wt&#39;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;#  Frenkel-Ladd for solid phase </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_nab</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;units           </span><span class="si">{</span><span class="n">general</span><span class="o">.</span><span class="n">units</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;boundary        p p p</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;atom_style      atomic</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;atom_modify     map array</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;read_data       </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_datain</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">barostat</span> <span class="o">==</span> <span class="s2">&quot;tri&quot;</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+                <span class="s2">&quot;change_box      all x final $</span><span class="si">{fxlo}</span><span class="s2"> $</span><span class="si">{fxhi}</span><span class="s2"> y final $</span><span class="si">{fylo}</span><span class="s2"> $</span><span class="si">{fyhi}</span><span class="s2"> &quot;</span>
+                <span class="s2">&quot;z final $</span><span class="si">{fzlo}</span><span class="s2"> $</span><span class="si">{fzhi}</span><span class="s2"> xy final $</span><span class="si">{fxy}</span><span class="s2"> xz final $</span><span class="si">{fxz}</span><span class="s2"> &quot;</span>
+                <span class="s2">&quot;yz final $</span><span class="si">{fyz}</span><span class="s2"> remap units box</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+                <span class="s2">&quot;change_box      all x final $</span><span class="si">{fxlo}</span><span class="s2"> $</span><span class="si">{fxhi}</span><span class="s2"> y final $</span><span class="si">{fylo}</span><span class="s2"> $</span><span class="si">{fyhi}</span><span class="s2"> &quot;</span>
+                <span class="s2">&quot;z final $</span><span class="si">{fzlo}</span><span class="s2"> $</span><span class="si">{fzhi}</span><span class="s2"> remap units box</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">rcut</span> <span class="o">=</span> <span class="mf">2.5</span> <span class="k">if</span> <span class="n">general</span><span class="o">.</span><span class="n">units</span> <span class="o">==</span> <span class="s2">&quot;lj&quot;</span> <span class="k">else</span> <span class="mf">7.5</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+            <span class="n">hybridPair</span><span class="p">(</span>
+                <span class="n">lammpsPair</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;zero </span><span class="si">{</span><span class="n">rcut</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;* *&quot;</span><span class="p">),</span>
+                <span class="n">general</span><span class="o">.</span><span class="n">pair</span><span class="p">,</span>
+                <span class="n">lbd</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;compute         U0 all pair </span><span class="si">{</span><span class="n">general</span><span class="o">.</span><span class="n">pair</span><span class="o">.</span><span class="n">_name</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">general</span><span class="o">.</span><span class="n">neighbor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;neighbor        </span><span class="si">{</span><span class="n">general</span><span class="o">.</span><span class="n">neighbor</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;neigh_modify    </span><span class="si">{</span><span class="n">general</span><span class="o">.</span><span class="n">neigh_modify</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">general</span><span class="o">.</span><span class="n">mass</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">general</span><span class="o">.</span><span class="n">mass</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">general</span><span class="o">.</span><span class="n">mass</span><span class="p">)):</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;mass            </span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">general</span><span class="o">.</span><span class="n">mass</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;mass            * </span><span class="si">{</span><span class="n">general</span><span class="o">.</span><span class="n">mass</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;velocity        all create </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_T</span><span class="si">:</span><span class="s2">g</span><span class="si">}</span><span class="s2"> &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1000000</span><span class="p">)</span><span class="si">}</span><span class="s2"> rot yes dist gaussian</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">general</span><span class="o">.</span><span class="n">timestep</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;timestep        </span><span class="si">{</span><span class="n">general</span><span class="o">.</span><span class="n">timestep</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;thermo          </span><span class="si">{</span><span class="n">general</span><span class="o">.</span><span class="n">thermo</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;fix             1 all nve</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;minimize        1e-6 1e-8 5000 50000</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;write_restart   restart.equil</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;fix             2 all langevin </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_T</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_T</span><span class="si">}</span><span class="s2"> &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;$(100*dt) </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1000000</span><span class="p">)</span><span class="si">}</span><span class="s2"> zero yes</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">general</span><span class="o">.</span><span class="n">units</span> <span class="o">==</span> <span class="s2">&quot;lj&quot;</span><span class="p">:</span>
+            <span class="n">kb</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">general</span><span class="o">.</span><span class="n">units</span> <span class="o">==</span> <span class="s2">&quot;metal&quot;</span><span class="p">:</span>
+            <span class="n">kb</span> <span class="o">=</span> <span class="mf">8.617333262e-5</span>
+
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;variable        pref equal </span><span class="si">{</span><span class="p">(</span><span class="mi">1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">lbd</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">kb</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">_T</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+        <span class="n">var_U1</span> <span class="o">=</span> <span class="s2">&quot;variable        U1 equal </span><span class="se">\&quot;</span><span class="s2">&quot;</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_ntyp</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nab</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;variable        k</span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> equal v_pref/v_msd</span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;group           g</span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> type </span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;fix             </span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">3</span><span class="si">}</span><span class="s2"> g</span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> spring/self $</span><span class="se">{{</span><span class="s2">k</span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="se">}}\n</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;fix_modify      </span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">3</span><span class="si">}</span><span class="s2"> energy yes</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">var_U1</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;f_</span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">3</span><span class="si">}</span><span class="s2">/atoms/</span><span class="si">{</span><span class="mi">1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">lbd</span><span class="si">}</span><span class="s2"> + &quot;</span>
+        <span class="n">var_U1</span> <span class="o">=</span> <span class="n">var_U1</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\&quot;\n</span><span class="s1">&#39;</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">var_U1</span><span class="p">)</span>
+
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;thermo_style    custom step temp etotal press c_U0 v_U1</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;thermo_modify   lost error norm yes</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;reset_timestep  0</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;run             </span><span class="si">{</span><span class="n">general</span><span class="o">.</span><span class="n">run</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="einstein.process">
+<a class="viewcode-back" href="../../api.html#jobs.einstein.einstein.process">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">general</span><span class="p">,</span> <span class="n">depend</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Post-process completed jobs and compute the absolute free energy.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        general : lammpsPara</span>
+<span class="sd">            General LAMMPS parameters.</span>
+<span class="sd">        depend : list object</span>
+<span class="sd">            Dependency specification used for MSD sampling.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            Absolute Helmholtz free energy per atom.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">general</span><span class="o">.</span><span class="n">units</span> <span class="o">==</span> <span class="s2">&quot;lj&quot;</span><span class="p">:</span>
+            <span class="n">kb</span> <span class="o">=</span> <span class="n">hbar</span> <span class="o">=</span> <span class="n">au</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">general</span><span class="o">.</span><span class="n">units</span> <span class="o">==</span> <span class="s2">&quot;metal&quot;</span><span class="p">:</span>
+            <span class="n">kb</span> <span class="o">=</span> <span class="mf">8.617333262e-5</span>
+            <span class="n">hbar</span> <span class="o">=</span> <span class="mf">6.582119569e-16</span>
+            <span class="n">au</span> <span class="o">=</span> <span class="mf">1.0364269190e-28</span>
+
+        <span class="n">natom</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_natom</span>
+        <span class="n">T</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_T</span>
+
+        <span class="n">n_msd</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nab</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">n_msd</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">prejob</span> <span class="o">=</span> <span class="n">lammpsJob</span><span class="p">(</span><span class="n">directory</span><span class="o">=</span><span class="n">depend</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">msd_list</span> <span class="o">=</span> <span class="n">prejob</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">varList</span><span class="o">=</span><span class="n">depend</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="o">-</span><span class="n">n_msd</span><span class="p">:])</span>
+
+        <span class="n">idx</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">f_ein</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nab</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">kappa</span> <span class="o">=</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">kb</span> <span class="o">*</span> <span class="n">T</span> <span class="o">/</span> <span class="n">msd_list</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+                <span class="n">mass</span> <span class="o">=</span> <span class="n">au</span> <span class="o">*</span> <span class="n">general</span><span class="o">.</span><span class="n">mass</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="n">omega</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">kappa</span> <span class="o">/</span> <span class="n">mass</span><span class="p">)</span>
+                <span class="n">f_i</span> <span class="o">=</span> <span class="n">kb</span> <span class="o">*</span> <span class="n">T</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">hbar</span> <span class="o">*</span> <span class="n">omega</span> <span class="o">/</span> <span class="p">(</span><span class="n">kb</span> <span class="o">*</span> <span class="n">T</span><span class="p">))</span>
+                <span class="n">f_ein</span> <span class="o">+=</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">n</span> <span class="o">/</span> <span class="n">natom</span> <span class="o">*</span> <span class="n">f_i</span>
+                <span class="n">idx</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">dU</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">ilbd</span><span class="p">,</span> <span class="n">lbd</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_lbdList</span><span class="p">):</span>
+            <span class="n">jobdir</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_dir</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">ilbd</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">jobdir</span><span class="p">):</span>
+                <span class="n">exapd_logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">jobdir</span><span class="si">}</span><span class="s2"> does not exist for post processing.&quot;</span>
+                <span class="p">)</span>
+            <span class="n">job</span> <span class="o">=</span> <span class="n">lammpsJob</span><span class="p">(</span><span class="n">directory</span><span class="o">=</span><span class="n">jobdir</span><span class="p">)</span>
+            <span class="p">[</span><span class="n">U0</span><span class="p">,</span> <span class="n">U1</span><span class="p">]</span> <span class="o">=</span> <span class="n">job</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">varList</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;c_U0&quot;</span><span class="p">,</span> <span class="s2">&quot;v_U1&quot;</span><span class="p">])</span>
+            <span class="n">dU</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">lbd</span><span class="p">,</span> <span class="n">U0</span> <span class="o">-</span> <span class="n">U1</span><span class="p">])</span>
+
+        <span class="n">dU</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">dU</span><span class="p">)</span>
+        <span class="n">interpolator</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">interpolate</span><span class="o">.</span><span class="n">PchipInterpolator</span><span class="p">(</span>
+            <span class="n">dU</span><span class="p">[</span><span class="mi">1</span><span class="p">:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">dU</span><span class="p">[</span><span class="mi">1</span><span class="p">:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">extrapolate</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+        <span class="n">lbd_extra</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1.001</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">)</span>
+        <span class="n">dU_extra</span> <span class="o">=</span> <span class="n">interpolator</span><span class="p">(</span><span class="n">lbd_extra</span><span class="p">)</span>
+        <span class="n">dF</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">integrate</span><span class="o">.</span><span class="n">simpson</span><span class="p">(</span><span class="n">dU_extra</span><span class="p">,</span> <span class="n">lbd_extra</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">general</span><span class="o">.</span><span class="n">pressure</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">pv</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">xlo</span><span class="p">,</span> <span class="n">xhi</span><span class="p">,</span> <span class="n">ylo</span><span class="p">,</span> <span class="n">yhi</span><span class="p">,</span> <span class="n">zlo</span><span class="p">,</span> <span class="n">zhi</span> <span class="o">=</span> <span class="n">prejob</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+                <span class="n">varList</span><span class="o">=</span><span class="n">depend</span><span class="p">[</span><span class="mi">2</span><span class="p">][:</span><span class="mi">6</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="n">vol</span> <span class="o">=</span> <span class="p">(</span><span class="n">xhi</span> <span class="o">-</span> <span class="n">xlo</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">yhi</span> <span class="o">-</span> <span class="n">ylo</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">zhi</span> <span class="o">-</span> <span class="n">zlo</span><span class="p">)</span>
+            <span class="n">pv</span> <span class="o">=</span> <span class="n">general</span><span class="o">.</span><span class="n">pressure</span> <span class="o">*</span> <span class="n">vol</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_natom</span>
+
+        <span class="k">return</span> <span class="n">f_ein</span> <span class="o">+</span> <span class="n">dF</span> <span class="o">+</span> <span class="n">pv</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright Copyright 2025. Iowa State University &amp; © 2025. Triad National Security, LLC.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

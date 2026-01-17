@@ -1,0 +1,502 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>jobs.lammpsJob &mdash; exa-pd</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            exa-pd
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API Reference for exaPD</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">exa-pd</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">jobs.lammpsJob</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for jobs.lammpsJob</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tools.logging_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">exapd_logger</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+
+<div class="viewcode-block" id="lammpsJob">
+<a class="viewcode-back" href="../../api.html#jobs.lammpsJob.lammpsJob">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">lammpsJob</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Define a LAMMPS job with an input script and all necessary data files.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    directory : str</span>
+<span class="sd">        Directory where the job will be executed.</span>
+<span class="sd">    scriptFile : str, optional</span>
+<span class="sd">        LAMMPS input script file.</span>
+<span class="sd">    arch : str, optional</span>
+<span class="sd">        Architecture type (e.g., &quot;gpu&quot;, &quot;cpu&quot;). Default is &quot;gpu&quot;.</span>
+<span class="sd">    depend : list object, optional</span>
+<span class="sd">        Dependency information for the job.</span>
+<span class="sd">        depend[0]: pre-job directory.</span>
+<span class="sd">        depend[1]: list of variable names to be set in LAMMPS script.</span>
+<span class="sd">        depend[2]: corresponding list ofvariable names in pre-job output.</span>
+<span class="sd">    priority : int, optional</span>
+<span class="sd">        Job priority:</span>
+<span class="sd">        - 0: pre_job</span>
+<span class="sd">        - 1: regular job</span>
+<span class="sd">        - 2: dependent job</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">directory</span><span class="p">,</span>
+                 <span class="n">scriptFile</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">arch</span><span class="o">=</span><span class="s2">&quot;gpu&quot;</span><span class="p">,</span>
+                 <span class="n">depend</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">priority</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dir</span> <span class="o">=</span> <span class="n">directory</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_arch</span> <span class="o">=</span> <span class="n">arch</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_depend</span> <span class="o">=</span> <span class="n">depend</span>
+        <span class="k">if</span> <span class="n">depend</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_priority</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_priority</span> <span class="o">=</span> <span class="n">priority</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">directory</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">exapd_logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">: Cannot create directory </span><span class="si">{</span><span class="n">directory</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_script</span> <span class="o">=</span> <span class="n">scriptFile</span>
+
+<div class="viewcode-block" id="lammpsJob.get_dir">
+<a class="viewcode-back" href="../../api.html#jobs.lammpsJob.lammpsJob.get_dir">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the job directory.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        str</span>
+<span class="sd">            Job directory path.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dir</span></div>
+
+
+<div class="viewcode-block" id="lammpsJob.get_script">
+<a class="viewcode-back" href="../../api.html#jobs.lammpsJob.lammpsJob.get_script">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_script</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the LAMMPS input script file.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        str or None</span>
+<span class="sd">            Input script filename.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_script</span></div>
+
+
+<div class="viewcode-block" id="lammpsJob.get_arch">
+<a class="viewcode-back" href="../../api.html#jobs.lammpsJob.lammpsJob.get_arch">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_arch</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the architecture type.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        str</span>
+<span class="sd">            Architecture identifier.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_arch</span></div>
+
+
+<div class="viewcode-block" id="lammpsJob.get_depend">
+<a class="viewcode-back" href="../../api.html#jobs.lammpsJob.lammpsJob.get_depend">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_depend</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return dependency information.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list or None</span>
+<span class="sd">            Dependency list.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_depend</span></div>
+
+
+<div class="viewcode-block" id="lammpsJob.set_arch">
+<a class="viewcode-back" href="../../api.html#jobs.lammpsJob.lammpsJob.set_arch">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_arch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arch</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the architecture type.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        arch : str</span>
+<span class="sd">            Architecture identifier.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_arch</span> <span class="o">=</span> <span class="n">arch</span></div>
+
+
+<div class="viewcode-block" id="lammpsJob.sample">
+<a class="viewcode-back" href="../../api.html#jobs.lammpsJob.lammpsJob.sample">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">varList</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;PotEng&quot;</span><span class="p">],</span> <span class="n">logfile</span><span class="o">=</span><span class="s2">&quot;log.lammps&quot;</span><span class="p">,</span> <span class="n">skip</span><span class="o">=</span><span class="mf">0.2</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sample averaged quantities from a LAMMPS log file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        varList : list of str, optional</span>
+<span class="sd">            Names of variables to sample (e.g., &quot;PotEng&quot;, &quot;Temp&quot;).</span>
+<span class="sd">        logfile : str, optional</span>
+<span class="sd">            Name of the LAMMPS log file.</span>
+<span class="sd">        skip : float, optional</span>
+<span class="sd">            Fraction of initial data to discard as equilibration.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        numpy.ndarray</span>
+<span class="sd">            Averaged values of the requested variables.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        This method assumes standard LAMMPS thermo output format.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">outfile</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_dir</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">logfile</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">outfile</span><span class="p">):</span>
+            <span class="n">exapd_logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">outfile</span><span class="si">}</span><span class="s2"> does not exist!&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">outfile</span><span class="p">)</span> <span class="k">as</span> <span class="n">infile</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">infile</span><span class="p">):</span>
+                <span class="k">if</span> <span class="s1">&#39;Step &#39;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                    <span class="n">beginline</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span>
+                    <span class="n">varLogged</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                <span class="k">if</span> <span class="s1">&#39;Loop &#39;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                    <span class="n">endline</span> <span class="o">=</span> <span class="n">i</span>
+        <span class="n">cols</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">varList</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">cols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">varLogged</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">var</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="n">exapd_logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">var</span><span class="si">}</span><span class="s2"> is not sampled in </span><span class="si">{</span><span class="n">outfile</span><span class="si">}</span><span class="s2">!&quot;</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">outfile</span><span class="p">,</span>
+                          <span class="n">skiprows</span><span class="o">=</span><span class="n">beginline</span><span class="p">,</span>
+                          <span class="n">max_rows</span><span class="o">=</span><span class="n">endline</span> <span class="o">-</span> <span class="n">beginline</span><span class="p">,</span>
+                          <span class="n">usecols</span><span class="o">=</span><span class="n">cols</span><span class="p">,</span>
+                          <span class="n">ndmin</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">skip</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)):,</span> <span class="p">:],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="lammpsJobGroup">
+<a class="viewcode-back" href="../../api.html#jobs.lammpsJob.lammpsJobGroup">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">lammpsJobGroup</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Define a group of LAMMPS jobs to be launched simultaneously.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    directory : str, optional</span>
+<span class="sd">        Path to the group directory.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">directory</span><span class="o">=</span><span class="s2">&quot;./&quot;</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dir</span> <span class="o">=</span> <span class="n">directory</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">directory</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">exapd_logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">: Cannot create directory </span><span class="si">{</span><span class="n">directory</span><span class="si">}</span><span class="s2">!&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_jobList</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">lammpsJob</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="lammpsJobGroup.get_joblist">
+<a class="viewcode-back" href="../../api.html#jobs.lammpsJob.lammpsJobGroup.get_joblist">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_joblist</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the list of LAMMPS jobs.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list of lammpsJob</span>
+<span class="sd">            Job list.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_jobList</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="lammpsPair">
+<a class="viewcode-back" href="../../api.html#jobs.lammpsJob.lammpsPair">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">lammpsPair</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Define an interatomic potential for LAMMPS.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pair_style : str</span>
+<span class="sd">        LAMMPS pair_style command.</span>
+<span class="sd">    pair_coeff : str or list of str</span>
+<span class="sd">        LAMMPS pair_coeff command(s).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pair_style</span><span class="p">,</span> <span class="n">pair_coeff</span><span class="p">):</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="n">pair_style</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="n">i</span><span class="p">]):</span>
+                    <span class="n">values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_param</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_param</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;pair_style</span><span class="se">\t</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_param</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pair_coeff</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="n">pair_coeff</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="p">[</span><span class="n">pair_coeff</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_numTyp</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_coeff</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>
+            <span class="n">words</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_numTyp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">words</span><span class="p">[:</span><span class="mi">2</span><span class="p">]))</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">words</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">words</span><span class="p">)):</span>
+                    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">words</span><span class="p">[</span><span class="n">i</span><span class="p">]):</span>
+                        <span class="n">words</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">words</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_coeff</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">words</span><span class="p">[</span><span class="mi">2</span><span class="p">:]))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_coeff</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cmd</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;pair_coeff</span><span class="se">\t</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_numTyp</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_coeff</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="lammpsPara">
+<a class="viewcode-back" href="../../api.html#jobs.lammpsJob.lammpsPara">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">lammpsPara</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Define general LAMMPS parameters from a dictionary.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    general : dict</span>
+<span class="sd">        Dictionary containing LAMMPS parameters.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">general</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">system</span> <span class="o">=</span> <span class="n">general</span><span class="p">[</span><span class="s2">&quot;system&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mass</span> <span class="o">=</span> <span class="n">general</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mass&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mass</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mass</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="p">):</span>
+            <span class="n">exapd_logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span>
+                <span class="s2">&quot;error: number of elements in mass and system doesn&#39;t match!&quot;</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">units</span> <span class="o">=</span> <span class="n">general</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;units&quot;</span><span class="p">,</span> <span class="s2">&quot;metal&quot;</span><span class="p">)</span>
+
+        <span class="n">pair_style</span> <span class="o">=</span> <span class="n">general</span><span class="p">[</span><span class="s2">&quot;pair_style&quot;</span><span class="p">]</span>
+        <span class="n">pair_coeff</span> <span class="o">=</span> <span class="n">general</span><span class="p">[</span><span class="s2">&quot;pair_coeff&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pair</span> <span class="o">=</span> <span class="n">lammpsPair</span><span class="p">(</span><span class="n">pair_style</span><span class="p">,</span> <span class="n">pair_coeff</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">proj_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">general</span><span class="p">[</span><span class="s2">&quot;dir&quot;</span><span class="p">])</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">proj_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">proj_dir</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">proj_dir</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">exapd_logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">: Cannot create directory </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">proj_dir</span><span class="si">}</span><span class="s2">!&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">neighbor</span> <span class="o">=</span> <span class="n">general</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;neighbor&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">neigh_modify</span> <span class="o">=</span> <span class="n">general</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;neigh_modify&quot;</span><span class="p">,</span> <span class="s2">&quot;delay 10&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timestep</span> <span class="o">=</span> <span class="n">general</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;timestep&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thermo</span> <span class="o">=</span> <span class="n">general</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;thermo&quot;</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pressure</span> <span class="o">=</span> <span class="n">general</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pressure&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Tdamp</span> <span class="o">=</span> <span class="n">general</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Tdamp&quot;</span><span class="p">,</span> <span class="s2">&quot;$(100.0*dt)&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Pdamp</span> <span class="o">=</span> <span class="n">general</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Pdamp&quot;</span><span class="p">,</span> <span class="s2">&quot;$(1000.0*dt)&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">run</span> <span class="o">=</span> <span class="n">general</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;run&quot;</span><span class="p">,</span> <span class="mi">1000000</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="hybridPair">
+<a class="viewcode-back" href="../../api.html#jobs.lammpsJob.hybridPair">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">hybridPair</span><span class="p">(</span><span class="n">pair0</span><span class="p">,</span> <span class="n">pair1</span><span class="p">,</span> <span class="n">lbd</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a hybrid scaled pair style.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pair0 : lammpsPair</span>
+<span class="sd">        First potential.</span>
+<span class="sd">    pair1 : lammpsPair</span>
+<span class="sd">        Second potential.</span>
+<span class="sd">    lbd : float</span>
+<span class="sd">        Mixing parameter (0 ≤ lbd ≤ 1).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">        LAMMPS input script string.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;pair_style</span><span class="se">\t</span><span class="s2">hybrid/scaled </span><span class="si">{</span><span class="mi">1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">lbd</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">pair0</span><span class="o">.</span><span class="n">_name</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">pair0</span><span class="o">.</span><span class="n">_param</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">lbd</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">pair1</span><span class="o">.</span><span class="n">_name</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">pair1</span><span class="o">.</span><span class="n">_param</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+    <span class="k">if</span> <span class="n">pair0</span><span class="o">.</span><span class="n">_name</span> <span class="o">==</span> <span class="n">pair1</span><span class="o">.</span><span class="n">_name</span><span class="p">:</span>
+        <span class="n">name0</span> <span class="o">=</span> <span class="n">pair0</span><span class="o">.</span><span class="n">_name</span> <span class="o">+</span> <span class="s2">&quot; 1&quot;</span>
+        <span class="n">name1</span> <span class="o">=</span> <span class="n">pair1</span><span class="o">.</span><span class="n">_name</span> <span class="o">+</span> <span class="s2">&quot; 2&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">name0</span> <span class="o">=</span> <span class="n">pair0</span><span class="o">.</span><span class="n">_name</span>
+        <span class="n">name1</span> <span class="o">=</span> <span class="n">pair1</span><span class="o">.</span><span class="n">_name</span>
+    <span class="k">for</span> <span class="n">numTyp</span><span class="p">,</span> <span class="n">coeff</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">pair0</span><span class="o">.</span><span class="n">_numTyp</span><span class="p">,</span> <span class="n">pair0</span><span class="o">.</span><span class="n">_coeff</span><span class="p">):</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;pair_coeff</span><span class="se">\t</span><span class="si">{</span><span class="n">numTyp</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">name0</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">coeff</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+    <span class="k">for</span> <span class="n">numTyp</span><span class="p">,</span> <span class="n">coeff</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">pair1</span><span class="o">.</span><span class="n">_numTyp</span><span class="p">,</span> <span class="n">pair1</span><span class="o">.</span><span class="n">_coeff</span><span class="p">):</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;pair_coeff</span><span class="se">\t</span><span class="si">{</span><span class="n">numTyp</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">name1</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">coeff</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+    <span class="k">return</span> <span class="n">cmd</span></div>
+
+
+
+<div class="viewcode-block" id="reset_types">
+<a class="viewcode-back" href="../../api.html#jobs.lammpsJob.reset_types">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">reset_types</span><span class="p">(</span><span class="n">nab</span><span class="p">,</span> <span class="n">natom</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Reset atomic types based on desired composition.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    nab : list of int</span>
+<span class="sd">        Number of atoms of each type.</span>
+<span class="sd">    natom : int</span>
+<span class="sd">        Total number of atoms.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">        LAMMPS commands to reset atom types.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="n">nab</span><span class="p">)</span> <span class="o">!=</span> <span class="n">natom</span> <span class="ow">or</span> <span class="nb">min</span><span class="p">(</span><span class="n">nab</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">exapd_logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="s2">&quot;Error: Incorrect number of atoms!&quot;</span><span class="p">)</span>
+    <span class="n">ntot</span> <span class="o">=</span> <span class="n">nab</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;group           g1 id &lt;= </span><span class="si">{</span><span class="n">ntot</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+    <span class="n">cmd</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;set             group g1 type 1</span><span class="se">\n</span><span class="s2">&quot;</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">nab</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="n">nab</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">cmd</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;group           g</span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> id &lt;&gt; </span><span class="si">{</span><span class="n">ntot</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">ntot</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">nab</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="n">cmd</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;set             group g</span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> type </span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="n">ntot</span> <span class="o">+=</span> <span class="n">nab</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">cmd</span></div>
+
+
+
+<div class="viewcode-block" id="pre_process">
+<a class="viewcode-back" href="../../api.html#jobs.lammpsJob.pre_process">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">pre_process</span><span class="p">(</span><span class="n">depend</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Pre-process a dependent job by sampling parameters from a pre-job.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    depend : list</span>
+<span class="sd">        Dependency specification:</span>
+<span class="sd">        - depend[0]: directory of the pre-job</span>
+<span class="sd">        - depend[1]: variable names to be set</span>
+<span class="sd">        - depend[2]: variables to sample</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">        Command-line arguments for LAMMPS variables.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">job</span> <span class="o">=</span> <span class="n">lammpsJob</span><span class="p">(</span><span class="n">directory</span><span class="o">=</span><span class="n">depend</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">job</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">varList</span><span class="o">=</span><span class="n">depend</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+    <span class="n">run_para</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">depend</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">res</span><span class="p">):</span>
+        <span class="n">run_para</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;-v </span><span class="si">{</span><span class="n">var</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">value</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2"> &quot;</span>
+    <span class="k">return</span> <span class="n">run_para</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright Copyright 2025. Iowa State University &amp; © 2025. Triad National Security, LLC.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
