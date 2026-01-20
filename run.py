@@ -33,7 +33,7 @@ from parsl_configs.config_registry import load_parsl_config
 import os
 
 
-if __name__ == '__main__':
+def main():
     """
     Execute the ExaPD workflow.
 
@@ -127,3 +127,7 @@ if __name__ == '__main__':
 
     # clean up Parsl
     parsl.dfk().cleanup()
+
+
+if __name__ == '__main__':
+    main()
