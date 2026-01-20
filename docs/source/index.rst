@@ -24,3 +24,4 @@ Exa-PD is a highly parallelizable workflow for constructing multi-element phase 
    tutorial
    workflow
    parsl_config
+   api

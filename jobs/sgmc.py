@@ -7,17 +7,34 @@ import sys
 
 
 class sgmc_simulator(lammpsJobGroup):
-    '''
-    set up lammps jobs for sgmc simulations for solid solutions)
-    '''
+    """
+    Set up LAMMPS jobs for semi-grand canonical Monte Carlo (SGMC) simulations.
+
+    This class generates a grid of LAMMPS simulations over temperature and
+    chemical potential difference (mu_B - mu_A) for solid solutions.
+
+    Parameters
+    ----------
+    data_in : str
+        Initial structure file in LAMMPS data format.
+    Tlist : list of float
+        List of temperatures to run simulations at.
+    mu_list : list of float
+        List of chemical potential differences (mu_B - mu_A).
+    directory : str
+        Path to the group directory where job subfolders are created.
+    barostat : str, optional
+        Barostat type for NPT. If "none", the script attempts to run without
+        barostat contribution in `baro_style` (though the current script still
+        writes an `npt` fix line).
+    """
 
     def __init__(self,
-                 data_in,          # initial structure file in lammps format
-                 Tlist,            # list of temperatures to equilibrate
-                 mu_list,          # list of mu_B-mu_A
-                 directory,        # path to group directory
-                 barostat="iso",   # barostat for npt, if "none", run nvt
-                 ):
+                 data_in,
+                 Tlist,
+                 mu_list,
+                 directory,
+                 barostat="iso"):
         super().__init__(directory)
         self._datain = data_in
         self._Tlist = Tlist
@@ -29,6 +46,15 @@ class sgmc_simulator(lammpsJobGroup):
         self._nab = nab
 
     def setup(self, general):
+        """
+        Create job directories and LAMMPS input scripts for all (T, mu) points.
+
+        Parameters
+        ----------
+        general : lammpsPara
+            General LAMMPS parameters (units, pair potential, neighbor settings,
+            masses, timestep, thermo frequency, pressure, Tdamp/Pdamp, run length).
+        """
         natom = self._natom
         for T in self._Tlist:
             Tdir = f"{self._dir}/T{T:g}"
@@ -48,6 +74,32 @@ class sgmc_simulator(lammpsJobGroup):
                 self._jobList.append(job)
 
     def write_script(self, scriptFile, general, T, mu):
+        """
+        Write a LAMMPS input script for a given temperature and chemical potential.
+
+        Parameters
+        ----------
+        scriptFile : str
+            Output path for the LAMMPS input script.
+        general : lammpsPara
+            General LAMMPS parameters and pair potential definition.
+        T : float
+            Temperature for the simulation.
+        mu : float
+            Chemical potential difference (mu_B - mu_A) used in the SGMC swap fix.
+
+        Notes
+        -----
+        The script uses:
+
+        - ``fix npt`` for temperature/pressure control (with barostat style
+          determined by ``self._barostat``), and
+        - ``fix atom/swap ... semi-grand yes ... mu 0 {mu}`` to perform SGMC swaps
+          between types 1 and 2.
+
+        Thermo output includes swap acceptance counters ``f_2[1]``, ``f_2[2]`` and
+        the type populations ``c_typevec[1]``, ``c_typevec[2]``.
+        """
         f = open(scriptFile, 'wt')
         f.write(f"#  SLI simulation for T = {T} and mu = {mu}\n")
         f.write("\n")
