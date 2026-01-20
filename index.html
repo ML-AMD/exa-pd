@@ -77,12 +77,21 @@
              
   <section id="overview">
 <h1>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h1>
-<p>Exa-pd is a highly parallelizable workflow for constructing multi-element phase diagrams (PDs). It uses standard sampling techniques—molecular dynamics (MD) and Monte Carlo (MC)—as implemented in the LAMMPS package, to simultaneously sample multiple phases on a fine temperature–composition mesh for free-energy calculations. The workflow uses <a class="reference external" href="https://parsl-project.org">Parsl</a>  as a global controller to manage the MD/MC jobs to achieve massive parallelization with almost ideal scalability. The resulting free energies of both liquid and solid phases (including solid solutions) are then fed to CALPHAD modeling using the PYCALPHAD package for the construction of a multi-element PD.</p>
+<figure class="align-center" id="id1">
+<img alt="_images/CuZr-phase-diagram.png" src="_images/CuZr-phase-diagram.png" />
+<figcaption>
+<p><span class="caption-text">Phase diagram of the Cu-Zr system predicted by <strong>exa-PD</strong> using an EAM-FS potential</span><a class="headerlink" href="#id1" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<hr class="docutils" />
+<p>Exa-PD is a highly parallelizable workflow for constructing multi-element phase diagrams (PDs). It uses standard sampling techniques—molecular dynamics (MD) and Monte Carlo (MC)—as implemented in the LAMMPS package, to simultaneously sample multiple phases on a fine temperature–composition mesh for free-energy calculations. The workflow uses <a class="reference external" href="https://parsl-project.org">Parsl</a>  as a global controller to manage the MD/MC jobs to achieve massive parallelization with almost ideal scalability. The resulting free energies of both liquid and solid phases (including solid solutions) are then fed to CALPHAD modeling using the PYCALPHAD package for the construction of a multi-element PD.</p>
 <div class="toctree-wrapper compound">
 <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="quickstart.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#using-a-json-configuration-file">Using a JSON Configuration File</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a><ul>

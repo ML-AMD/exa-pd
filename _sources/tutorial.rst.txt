@@ -20,12 +20,14 @@ Start by cloning the `exa-PD` repository:
 
 If you use `Conda <https://docs.conda.io/en/latest/miniconda.html>`_ to manage
 Python packages, you may create a conda environment to install the required
-packages using the ``amd_env.yml`` file we provide:
+packages using the ``exa_pd_env.yml`` file we provide:
 
 .. code-block:: bash
 
-   conda env create -f amd_env.yml
-   conda activate amd_env
+   conda env create -f exa_pd_env.yml
+   conda activate exa_pd_env.yml
+   # from the repo root:
+   python run.py --help
 
 
 3. Prepare the Data and LAMMPS Setup

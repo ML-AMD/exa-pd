@@ -49,6 +49,8 @@
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Quickstart</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#using-a-json-configuration-file">Using a JSON Configuration File</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
@@ -91,6 +93,96 @@
 <li><p>scipy &gt;= 1.0.0</p></li>
 <li><p>ase &gt;= 3.24.0</p></li>
 </ul>
+<p><strong>Additionally:</strong></p>
+<ul class="simple">
+<li><p>Ensure you have a working LAMMPS installation</p></li>
+<li><p>Ensure you have prepared the initial crystal structures in the Crystallographic Information File (CIF) format or the Vienna Ab initio Simulation Package (VASP) format</p></li>
+</ul>
+</section>
+<section id="installation">
+<span id="id1"></span><h2>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
+<p><strong>Option A — From Release (preferred)</strong></p>
+<p>Install the packaged wheel (activate your Conda env first if you use Conda):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;.../exa_pd-0.1.0-py3-none-any.whl&quot;</span>
+</pre></div>
+</div>
+<p>Quick check:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>exa_pd<span class="w"> </span>--help
+</pre></div>
+</div>
+<p><strong>Option B — From source (Conda-only)</strong></p>
+<p>Create/activate the environment, then run from the repo:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>exa_pd_env.yml
+conda<span class="w"> </span>activate<span class="w"> </span>exa_pd_env
+<span class="c1"># from the repository root</span>
+python<span class="w"> </span>run.py<span class="w"> </span>--help
+</pre></div>
+</div>
+</section>
+<section id="using-a-json-configuration-file">
+<h2>Using a JSON Configuration File<a class="headerlink" href="#using-a-json-configuration-file" title="Link to this heading"></a></h2>
+<p>The recommended way to configure exa-PD is through a JSON configuration file.
+It specifies all the required and optional parameters for running the workflow.</p>
+<p>Here is an example configuration file for the Perlmutter system:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;general&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                    </span><span class="nt">&quot;system&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Cu Zr&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="nt">&quot;mass&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">63.546</span><span class="p">,</span><span class="w"> </span><span class="mf">91.224</span><span class="p">],</span>
+<span class="w">                    </span><span class="nt">&quot;dir&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;./test&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="nt">&quot;pair_style&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;eam/fs&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="nt">&quot;pair_coeff&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;* * ./example/v10_5_CuZr_B2.eam.fs Cu Zr&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="nt">&quot;run&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">50000</span>
+<span class="w">              </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;run&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                    </span><span class="nt">&quot;ngpu&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">                    </span><span class="nt">&quot;ncpu&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">                    </span><span class="nt">&quot;gpu_schedule_option&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                              </span><span class="s2">&quot;#SBATCH -C gpu&quot;</span><span class="p">,</span>
+<span class="w">                              </span><span class="s2">&quot;#SBATCH -t 01:00:00&quot;</span><span class="p">,</span>
+<span class="w">                              </span><span class="s2">&quot;#SBATCH -A m4802&quot;</span><span class="p">,</span>
+<span class="w">                              </span><span class="s2">&quot;#SBATCH --gpus-per-node=4&quot;</span><span class="p">,</span>
+<span class="w">                              </span><span class="s2">&quot;#SBATCH -q premium&quot;</span>
+<span class="w">                          </span><span class="p">],</span>
+<span class="w">                    </span><span class="nt">&quot;cpu_schedule_option&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                      </span><span class="s2">&quot;#SBATCH -C cpu&quot;</span><span class="p">,</span>
+<span class="w">                      </span><span class="s2">&quot;#SBATCH -t 01:00:00&quot;</span><span class="p">,</span>
+<span class="w">                              </span><span class="s2">&quot;#SBATCH -A m4802&quot;</span><span class="p">,</span>
+<span class="w">                      </span><span class="s2">&quot;#SBATCH -q premium&quot;</span>
+<span class="w">                      </span><span class="p">],</span>
+<span class="w">                    </span><span class="nt">&quot;gpu_exe&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/path/to/lmp_serial -sf gpu -pk gpu 1&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="nt">&quot;cpu_exe&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;lmp&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="nt">&quot;parsl_config&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;perlmutter&quot;</span>
+<span class="w">                    </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;solid&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                    </span><span class="nt">&quot;phases&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                              </span><span class="s2">&quot;./phases/Cu.cif&quot;</span><span class="p">,</span>
+<span class="w">                              </span><span class="s2">&quot;./phases/Zr3Cu8.poscar&quot;</span><span class="p">,</span>
+<span class="w">                              </span><span class="s2">&quot;./phases/Zr7Cu10.cif&quot;</span><span class="p">,</span>
+<span class="w">                              </span><span class="s2">&quot;./phases/Zr2Cu.poscar&quot;</span><span class="p">,</span>
+<span class="w">                              </span><span class="s2">&quot;./phases/ZrCu.cif&quot;</span><span class="p">,</span>
+<span class="w">                              </span><span class="s2">&quot;./phases/Zr.poscar&quot;</span>
+<span class="w">                          </span><span class="p">],</span>
+<span class="w">                    </span><span class="nt">&quot;Tmin&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">300</span><span class="p">,</span>
+<span class="w">                    </span><span class="nt">&quot;Tmax&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1500</span><span class="p">,</span>
+<span class="w">                    </span><span class="nt">&quot;dT&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">50</span><span class="p">,</span>
+<span class="w">                    </span><span class="nt">&quot;Tlist&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">2000</span><span class="p">],</span>
+<span class="w">                    </span><span class="nt">&quot;ntarget&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">4000</span>
+<span class="w">                    </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;liquid&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                            </span><span class="nt">&quot;data_in&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;./example/liq.lammps&quot;</span><span class="p">,</span>
+<span class="w">                            </span><span class="nt">&quot;initial_comp&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">],</span>
+<span class="w">                            </span><span class="nt">&quot;final_comp&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">],</span>
+<span class="w">                            </span><span class="nt">&quot;ncomp&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<span class="w">                            </span><span class="nt">&quot;ref_pair_style&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;eam/fs&quot;</span><span class="p">,</span>
+<span class="w">                            </span><span class="nt">&quot;ref_pair_coeff&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;* * ./example/v10_5_CuZr_B2.eam.fs Cu Cu&quot;</span><span class="p">,</span>
+<span class="w">                            </span><span class="nt">&quot;dlbd&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">0.05</span><span class="p">,</span>
+<span class="w">                            </span><span class="nt">&quot;Tmin&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">700</span><span class="p">,</span>
+<span class="w">                            </span><span class="nt">&quot;Tmax&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">2000</span><span class="p">,</span>
+<span class="w">                            </span><span class="nt">&quot;dT&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">50</span>
+<span class="w">                            </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
 </section>
 </section>
 
