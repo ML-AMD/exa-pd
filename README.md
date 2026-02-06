@@ -63,7 +63,7 @@ We currently support the automated workflows on NERSC's Perlmutter. If you would
 - Feed free energies to CALPHAD modeling using the PYCALPHAD package to construct the phase diagram.
        
 ## Examples
-Follow the step-by-step tutorial to construct the phase diagram for the Cu-Zr system: [exa-PD Tutorial](https://github.com/ML-AMD/exa-pd/blob/main/docs/source%20/tutorial.rst)   
+Follow the step-by-step tutorial to construct the phase diagram for the Cu-Zr system: [exa-PD Tutorial](https://ml-amd.github.io/exa-pd/index.html)   
 
 ## Copyright
 Copyright 2025. Iowa State University. All rights reserved. This software was produced under U.S. Government contract DE-AC02-07CH11358 for the Ames National Laboratory, which is operated by Iowa State University for the U.S. Department of Energy. The U.S. Government has rights to use, reproduce, and distribute this software. NEITHER THE GOVERNMENT NOR IOWA STATE UNIVERSITY MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE. If software is modified to produce derivative works, such modified software should be clearly marked, so as not to confuse it with the version available from the Ames National Laboratory.
