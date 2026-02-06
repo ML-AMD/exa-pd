@@ -6,7 +6,7 @@
 Overview
 ========
 
-.. figure:: images/CuZr-phase-diagram.png
+.. figure:: images/Cu-Zr-PhaseDiagram.png
    :align: center
 
    Phase diagram of the Cu-Zr system predicted by **exa-PD** using an EAM-FS potential  
