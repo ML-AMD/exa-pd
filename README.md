@@ -34,7 +34,7 @@ python run.py --help
 ### Option B — From release
 ```bash
 # (Recommended) create & activate a fresh virtual environment
-pip install exa_pd-0.1.0-py3-none-any.whl
+pip install https://github.com/ML-AMD/exa-pd/releases/download/v0.1.0/exa_pd-0.1.0-py3-none-any.whl
 exa_pd --help
 ```
 
