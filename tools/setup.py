@@ -180,6 +180,11 @@ def solidJobs(general, solid):
     except KeyError:
         ntarget = 5000
 
+    try:
+        fixCM = solid["fix_CM"]
+    except KeyError:
+        fixCM = False
+
     sol_jobs = []
 
     for ph in phases:
@@ -235,7 +240,7 @@ def solidJobs(general, solid):
 
         depend = (pre_job_dir, pre_var_names, pre_var_values)
         sol_ti = einstein(
-            data_in, dlbd, Tlist[0], directory=f"{phdir}/einstein")
+            data_in, dlbd, Tlist[0], fixCM, directory=f"{phdir}/einstein")
         sol_ti.setup(general, barostat, depend)
         sol_jobs += sol_ti.get_joblist()
 
