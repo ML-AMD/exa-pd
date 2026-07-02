@@ -30,6 +30,7 @@ class einstein(lammpsJobGroup):
                  data_in,
                  dlbd,
                  T,
+                 fixCM,
                  directory="./"):
 
         super().__init__(directory)
@@ -39,6 +40,7 @@ class einstein(lammpsJobGroup):
         self._lbdList[0] = 0.01
         self._lbdList[-1] = 0.99
         self._T = T
+        self._fixCM = fixCM
         natom, ntyp, nab = read_lmp_data(self._datain, read_nab=True)
         self._natom = natom
         self._ntyp = ntyp
@@ -145,6 +147,9 @@ class einstein(lammpsJobGroup):
             f"fix             2 all langevin {self._T} {self._T} "
             f"$(100*dt) {np.random.randint(1000000)} zero yes\n\n"
         )
+
+        if self._fixCM is True:
+            f.write("fix             com all recenter INIT INIT INIT\n\n")
 
         if general.units == "lj":
             kb = 1
