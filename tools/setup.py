@@ -447,3 +447,114 @@ def sgmcJobs(general, sgmc):
         sgmc_jobs += mysgmc.get_joblist()
 
     return sgmc_jobs
+
+
+def pemJobs(general, pem):
+    """
+    Set up persistent-embryo method (PEM) simulations.
+
+    Parameters
+    ----------
+    general : lammpsPara
+        General simulation parameters.
+    pem : dict
+        PEM settings.
+
+    Returns
+    -------
+    list of lammpsJob
+        List of all LAMMPS jobs created for SLI simulations.
+    """
+    pem_dir = f"{general.proj_dir}/pem"
+    if not os.path.isdir(pem_dir):
+        try:
+            os.mkdir(pem_dir)
+        except Exception as e:
+            exapd_logger.critical(f"{e}: Cannnot create directory {pem_dir}")
+
+    phases = pem["phases"]
+
+    try:
+        Tlist = np.sort(pem["Tlist"])
+    except KeyError:
+        Tlist = None
+
+    try:
+        Tmin = pem["Tmin"]
+        Tmax = pem["Tmax"]
+        dT = pem["dT"]
+        if Tlist is None:
+            Tlist = np.arange(Tmin, Tmax + 0.1 * dT, dT)
+        else:
+            Tlist = merge_arrays(Tlist, np.arange(Tmin, Tmax + 0.1 * dT, dT))
+    except KeyError:
+        if Tlist is None:
+            exapd_logger.critical("Tlist cannot be created for solid.")
+
+    try:
+        Tmelt = pem["Tmelt"]
+    except Exception as e:
+        exapd_logger.critical(
+            f"{e}: a high T for melting the crystal phase is needed.")
+
+    try:
+        ntarget = pem["ntarget"]
+    except KeyError:
+        ntarget = 5000
+
+    try:
+        repeat = pem["repeat"]
+    except KeyError:
+        repeat = 1
+
+    try:
+        Sc = pem["Sc"]
+    except KeyError:
+        Sc = 0.5
+
+    try:
+        Nsc = pem["Nsc"]
+    except Exception as e:
+        exapd_logger.critical(
+            f"{e}: sub-critical size for removing springs is needed.")
+
+    try:
+        minNeigh = pem["minNeigh"]
+    except KeyError:
+        minNeigh = 5
+
+    pem_jobs = []
+
+    for ph in phases:
+        ph_file = os.path.abspath(ph)
+        if not os.path.exists(ph_file):
+            exapd_logger.critical(f"File {ph_file} does not exist.")
+
+        name, form = ph_file.split('/')[-1].split('.')
+        phdir = f"{pem_dir}/{name}"
+        if not os.path.isdir(phdir):
+            try:
+                os.mkdir(phdir)
+            except Exception as e:
+                exapd_logger.critical(f"{e}: Cannot create directory {phdir}.")
+
+        if form == "lammps":
+            data_in = ph_file
+            barostat = get_lammps_barostat(data_in)
+        else:
+            data_in = f"{phdir}/{name}.lammps"
+            try:
+                barostat = create_lammps_supercell(
+                    general.system, ph_file, data_in, ntarget=ntarget)
+            except Exception as e:
+                exapd_logger.critical(
+                    f"{e}: ASE could not generate the lammps input for {ph_file}.")
+
+        mypem = pem_simulator(
+            data_in, Tlist, Tmelt, f"{phdir}",
+            replicate, orient, barostat
+        )
+        mypem.setup(general)
+        pem_jobs += mypem.get_joblist()
+
+    return pem_jobs
