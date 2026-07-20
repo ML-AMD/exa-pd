@@ -130,7 +130,7 @@ def get_lammps_barostat(data_in, eps=1e-3):
         return "aniso"
 
 
-def create_lammps_supercell(system, infile, outfile, ntarget=500, eps=1.e-3):
+def create_lammps_supercell(system, infile, outfile, ntarget=500, eps=1.e-3, sort_atoms=False):
     """
     Create a LAMMPS data file for a supercell built from a crystal structure.
 
@@ -146,6 +146,8 @@ def create_lammps_supercell(system, infile, outfile, ntarget=500, eps=1.e-3):
         Target number of atoms in the supercell.
     eps : float, optional
         Tolerance for lattice parameter comparisons.
+    sort_atom: boolean, optional, used in PEM simulations
+        if True, atoms will be sorted based on distance from cell center.
 
     Returns
     -------
@@ -196,6 +198,13 @@ def create_lammps_supercell(system, infile, outfile, ntarget=500, eps=1.e-3):
         if rotmat is not None:
             supercell = make_supercell(supercell, rotmat)
 
+    if sort_atoms:
+        center = supercell.cell.diagonal() / 2
+        positions = supercell.get_positions()
+        distances = np.linalg.norm(positions - center, axis=1)
+        sort_indices = np.argsort(distances)
+        supercell = supercell[sort_indices]
+        
     name = infile.split('/')[-1].split('.')[0]
     types = supercell.get_chemical_symbols()
     frac_coords = supercell.get_scaled_positions()

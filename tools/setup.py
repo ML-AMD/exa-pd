@@ -4,6 +4,7 @@ from jobs.einstein import *
 from jobs.tramp import *
 from jobs.sli import *
 from jobs.sgmc import *
+from jobs.pem import *
 from tools.logging_config import exapd_logger
 from tools.utils import merge_arrays
 import os
@@ -282,7 +283,7 @@ def sliJobs(general, sli):
             Tlist = merge_arrays(Tlist, np.arange(Tmin, Tmax + 0.1 * dT, dT))
     except KeyError:
         if Tlist is None:
-            exapd_logger.critical("Tlist cannot be created for solid.")
+            exapd_logger.critical("Tlist cannot be created for SLI.")
 
     try:
         Tmelt = sli["Tmelt"]
@@ -386,7 +387,7 @@ def sgmcJobs(general, sgmc):
             Tlist = merge_arrays(Tlist, np.arange(Tmin, Tmax + 0.1 * dT, dT))
     except KeyError:
         if Tlist is None:
-            exapd_logger.critical("Tlist cannot be created for solid.")
+            exapd_logger.critical("Tlist cannot be created for SGMC.")
 
     try:
         mu_list = np.sort(sgmc["mu_list"])
@@ -463,7 +464,7 @@ def pemJobs(general, pem):
     Returns
     -------
     list of lammpsJob
-        List of all LAMMPS jobs created for SLI simulations.
+        List of all LAMMPS jobs created for PEM simulations.
     """
     pem_dir = f"{general.proj_dir}/pem"
     if not os.path.isdir(pem_dir):
@@ -489,7 +490,7 @@ def pemJobs(general, pem):
             Tlist = merge_arrays(Tlist, np.arange(Tmin, Tmax + 0.1 * dT, dT))
     except KeyError:
         if Tlist is None:
-            exapd_logger.critical("Tlist cannot be created for solid.")
+            exapd_logger.critical("Tlist cannot be created for PEM.")
 
     try:
         Tmelt = pem["Tmelt"]
@@ -508,9 +509,21 @@ def pemJobs(general, pem):
         repeat = 1
 
     try:
+        rcut = pem["rcut"]
+    except Exception as e:
+        exapd_logger.critical(
+            f"{e}: rcut for defining nearest neighbors is needed.")
+
+    try:
         Sc = pem["Sc"]
     except KeyError:
         Sc = 0.5
+
+    try:
+        Nembryo = pem["Nembryo"]
+    except Exception as e:
+        exapd_logger.critical(
+            f"{e}: embryo size is needed.")
 
     try:
         Nsc = pem["Nsc"]
@@ -545,14 +558,15 @@ def pemJobs(general, pem):
             data_in = f"{phdir}/{name}.lammps"
             try:
                 barostat = create_lammps_supercell(
-                    general.system, ph_file, data_in, ntarget=ntarget)
+                    general.system, ph_file, data_in, 
+                    ntarget=ntarget, sort_atoms=True)
             except Exception as e:
                 exapd_logger.critical(
                     f"{e}: ASE could not generate the lammps input for {ph_file}.")
 
         mypem = pem_simulator(
             data_in, Tlist, Tmelt, f"{phdir}",
-            replicate, orient, barostat
+            rcut, Nembryo, Nsc, repeat, Sc, minNeigh
         )
         mypem.setup(general)
         pem_jobs += mypem.get_joblist()
