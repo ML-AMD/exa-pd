@@ -558,7 +558,7 @@ def pemJobs(general, pem):
             data_in = f"{phdir}/{name}.lammps"
             try:
                 barostat = create_lammps_supercell(
-                    general.system, ph_file, data_in, 
+                    general.system, ph_file, data_in,
                     ntarget=ntarget, sort_atoms=True)
             except Exception as e:
                 exapd_logger.critical(
