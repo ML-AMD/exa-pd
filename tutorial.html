@@ -134,12 +134,12 @@ python<span class="w"> </span>run.py<span class="w"> </span>--help
 <p>At the top of <cite>config_registry.py</cite>, update <cite>CONFIG_REGISTRY</cite> to reflect the new config name. This value <strong>have to match</strong> the value you will set in your JSON config file (the <code class="docutils literal notranslate"><span class="pre">run</span></code> field).</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Before:</span>
 <span class="n">CONFIG_REGISTRY</span> <span class="o">=</span> <span class="p">{</span>
- <span class="s2">&quot;perlmutter&quot;</span><span class="p">:</span> <span class="s2">&quot;parsl_configs.perlmutter.PerlmutterConfig&quot;</span><span class="p">,</span>
+ <span class="s2">"perlmutter"</span><span class="p">:</span> <span class="s2">"parsl_configs.perlmutter.PerlmutterConfig"</span><span class="p">,</span>
 <span class="p">}</span>
 
 <span class="c1"># After:</span>
 <span class="n">CONFIG_REGISTRY</span> <span class="o">=</span> <span class="p">{</span>
- <span class="s2">&quot;my_perlmutter&quot;</span><span class="p">:</span> <span class="s2">&quot;parsl_configs.my_perlmutter.PerlmutterConfig&quot;</span><span class="p">,</span>
+ <span class="s2">"my_perlmutter"</span><span class="p">:</span> <span class="s2">"parsl_configs.my_perlmutter.PerlmutterConfig"</span><span class="p">,</span>
 <span class="p">}</span>
 </pre></div>
 </div>
