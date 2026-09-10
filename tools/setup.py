@@ -183,7 +183,7 @@ def solidJobs(general, solid):
     try:
         fixCM = solid["fix_CM"]
     except KeyError:
-        fixCM = False
+        fixCM = True
 
     sol_jobs = []
 
