@@ -130,7 +130,8 @@ def get_lammps_barostat(data_in, eps=1e-3):
         return "aniso"
 
 
-def create_lammps_supercell(system, infile, outfile, ntarget=500, eps=1.e-3):
+def create_lammps_supercell(system, infile, outfile,
+                            ntarget=500, eps=1.e-3, sort_atoms=False):
     """
     Create a LAMMPS data file for a supercell built from a crystal structure.
 
@@ -146,6 +147,8 @@ def create_lammps_supercell(system, infile, outfile, ntarget=500, eps=1.e-3):
         Target number of atoms in the supercell.
     eps : float, optional
         Tolerance for lattice parameter comparisons.
+    sort_atom: boolean, optional, used in PEM simulations
+        if True, atoms will be sorted based on distance from cell center.
 
     Returns
     -------
@@ -165,7 +168,8 @@ def create_lammps_supercell(system, infile, outfile, ntarget=500, eps=1.e-3):
     a, b, c = cell.lengths()
     alpha, beta, gamma = cell.angles()
     barostat = "tri"
-    if abs(alpha - 90) < eps and abs(beta - 90) < eps and abs(gamma - 90) < eps:
+    if abs(alpha - 90) < eps and abs(beta -
+                                     90) < eps and abs(gamma - 90) < eps:
         if abs(a - b) < eps and abs(a - c) < eps and abs(b - c) < eps:
             barostat = "iso"
         elif abs(a - b) < eps:
@@ -176,6 +180,20 @@ def create_lammps_supercell(system, infile, outfile, ntarget=500, eps=1.e-3):
             barostat = "couple yz"
         else:
             barostat = "aniso"
+    elif abs(a - b) < eps and abs(alpha - 90) < eps \
+            and abs(beta - 90) < eps and abs(gamma - 120) < eps:  # hexagonal cell
+        structure = make_supercell(
+            structure, [[1, -1, 0], [1, 1, 0], [0, 0, 1]])
+        cell = structure.get_cell()
+        a, b, c = cell.lengths()
+        barostat = "couple xy"
+    elif abs(a - b) < eps and abs(alpha - 90) < eps \
+            and abs(beta - 90) < eps and abs(gamma - 60) < eps:  # hexagonal cell
+        structure = make_supercell(
+            structure, [[1, 1, 0], [-1, 1, 0], [0, 0, 1]])
+        cell = structure.get_cell()
+        a, b, c = cell.lengths()
+        barostat = "couple xy"
 
     rho = len(structure) / structure.get_volume()
     boxsize = (ntarget / rho) ** (1 / 3)
@@ -187,7 +205,8 @@ def create_lammps_supercell(system, infile, outfile, ntarget=500, eps=1.e-3):
     cell = supercell.get_cell()
     a, b, c = cell.lengths()
     alpha, beta, gamma = cell.angles()
-    if abs(alpha - 90) < eps and abs(beta - 90) < eps and abs(gamma - 90) < eps:
+    if abs(alpha - 90) < eps and abs(beta -
+                                     90) < eps and abs(gamma - 90) < eps:
         lx, ly, lz = a, b, c
         xy = xz = yz = 0
     else:
@@ -195,6 +214,13 @@ def create_lammps_supercell(system, infile, outfile, ntarget=500, eps=1.e-3):
             a, b, c, alpha, beta, gamma)
         if rotmat is not None:
             supercell = make_supercell(supercell, rotmat)
+
+    if sort_atoms:
+        center = supercell.cell.diagonal() / 2
+        positions = supercell.get_positions()
+        distances = np.linalg.norm(positions - center, axis=1)
+        sort_indices = np.argsort(distances)
+        supercell = supercell[sort_indices]
 
     name = infile.split('/')[-1].split('.')[0]
     types = supercell.get_chemical_symbols()
@@ -328,7 +354,8 @@ def create_tdb_header(system, mass):
     tdb += "ELEMENT /-   ELECTRON_GAS              0.0000E+00  0.0000E+00  0.0000E+00!\n"
     tdb += "ELEMENT VA   VACUUM                    0.0000E+00  0.0000E+00  0.0000E+00!\n"
     for el, m in zip(system, mass):
-        tdb += f"ELEMENT {el} NA                          {m:.4E}  0.0000E+00  0.0000E+00!\n"
+        tdb += f"ELEMENT {el} NA                          {
+            m:.4E}  0.0000E+00  0.0000E+00!\n"
     tdb += "\n TYPE_DEFINITION % SEQ *!\n"
     tdb += f" DEFINE_SYSTEM_DEFAULT ELEMENT {len(system)} !\n"
     tdb += " DEFAULT_COMMAND DEF_SYS_ELEMENT VA /- !\n\n"
