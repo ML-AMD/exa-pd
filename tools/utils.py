@@ -216,15 +216,16 @@ def create_lammps_supercell(system, infile, outfile,
             supercell = make_supercell(supercell, rotmat)
 
     if sort_atoms:
-        center = supercell.cell.diagonal() / 2
-        positions = supercell.get_positions()
-        distances = np.linalg.norm(positions - center, axis=1)
-        sort_indices = np.argsort(distances)
-        supercell = supercell[sort_indices]
+        frac = supercell.get_scaled_positions(wrap=True)
+        dfrac = frac - 0.5
+        dfrac -= np.round(dfrac)
+        dr = dfrac @ supercell.cell.array
+        distances = np.linalg.norm(dr, axis=1)
+        supercell = supercell[np.argsort(distances)]
 
     name = infile.split('/')[-1].split('.')[0]
     types = supercell.get_chemical_symbols()
-    frac_coords = supercell.get_scaled_positions()
+    frac_coords = supercell.get_scaled_positions(wrap=True)
 
     try:
         f = open(outfile, "wt")
@@ -354,8 +355,7 @@ def create_tdb_header(system, mass):
     tdb += "ELEMENT /-   ELECTRON_GAS              0.0000E+00  0.0000E+00  0.0000E+00!\n"
     tdb += "ELEMENT VA   VACUUM                    0.0000E+00  0.0000E+00  0.0000E+00!\n"
     for el, m in zip(system, mass):
-        tdb += f"ELEMENT {el} NA                          {
-            m:.4E}  0.0000E+00  0.0000E+00!\n"
+        tdb += f"ELEMENT {el} NA                          {m:.4E}  0.0000E+00  0.0000E+00!\n"
     tdb += "\n TYPE_DEFINITION % SEQ *!\n"
     tdb += f" DEFINE_SYSTEM_DEFAULT ELEMENT {len(system)} !\n"
     tdb += " DEFAULT_COMMAND DEF_SYS_ELEMENT VA /- !\n\n"
