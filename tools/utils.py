@@ -130,7 +130,8 @@ def get_lammps_barostat(data_in, eps=1e-3):
         return "aniso"
 
 
-def create_lammps_supercell(system, infile, outfile, ntarget=500, eps=1.e-3):
+def create_lammps_supercell(system, infile, outfile,
+                            ntarget=500, eps=1.e-3, sort_atoms=False):
     """
     Create a LAMMPS data file for a supercell built from a crystal structure.
 
@@ -146,6 +147,8 @@ def create_lammps_supercell(system, infile, outfile, ntarget=500, eps=1.e-3):
         Target number of atoms in the supercell.
     eps : float, optional
         Tolerance for lattice parameter comparisons.
+    sort_atom: boolean, optional, used in PEM simulations
+        if True, atoms will be sorted based on distance from cell center.
 
     Returns
     -------
@@ -165,7 +168,8 @@ def create_lammps_supercell(system, infile, outfile, ntarget=500, eps=1.e-3):
     a, b, c = cell.lengths()
     alpha, beta, gamma = cell.angles()
     barostat = "tri"
-    if abs(alpha - 90) < eps and abs(beta - 90) < eps and abs(gamma - 90) < eps:
+    if abs(alpha - 90) < eps and abs(beta -
+                                     90) < eps and abs(gamma - 90) < eps:
         if abs(a - b) < eps and abs(a - c) < eps and abs(b - c) < eps:
             barostat = "iso"
         elif abs(a - b) < eps:
@@ -176,6 +180,20 @@ def create_lammps_supercell(system, infile, outfile, ntarget=500, eps=1.e-3):
             barostat = "couple yz"
         else:
             barostat = "aniso"
+    elif abs(a - b) < eps and abs(alpha - 90) < eps \
+            and abs(beta - 90) < eps and abs(gamma - 120) < eps:  # hexagonal cell
+        structure = make_supercell(
+            structure, [[1, -1, 0], [1, 1, 0], [0, 0, 1]])
+        cell = structure.get_cell()
+        a, b, c = cell.lengths()
+        barostat = "couple xy"
+    elif abs(a - b) < eps and abs(alpha - 90) < eps \
+            and abs(beta - 90) < eps and abs(gamma - 60) < eps:  # hexagonal cell
+        structure = make_supercell(
+            structure, [[1, 1, 0], [-1, 1, 0], [0, 0, 1]])
+        cell = structure.get_cell()
+        a, b, c = cell.lengths()
+        barostat = "couple xy"
 
     rho = len(structure) / structure.get_volume()
     boxsize = (ntarget / rho) ** (1 / 3)
@@ -187,7 +205,8 @@ def create_lammps_supercell(system, infile, outfile, ntarget=500, eps=1.e-3):
     cell = supercell.get_cell()
     a, b, c = cell.lengths()
     alpha, beta, gamma = cell.angles()
-    if abs(alpha - 90) < eps and abs(beta - 90) < eps and abs(gamma - 90) < eps:
+    if abs(alpha - 90) < eps and abs(beta -
+                                     90) < eps and abs(gamma - 90) < eps:
         lx, ly, lz = a, b, c
         xy = xz = yz = 0
     else:
@@ -196,9 +215,17 @@ def create_lammps_supercell(system, infile, outfile, ntarget=500, eps=1.e-3):
         if rotmat is not None:
             supercell = make_supercell(supercell, rotmat)
 
+    if sort_atoms:
+        frac = supercell.get_scaled_positions(wrap=True)
+        dfrac = frac - 0.5
+        dfrac -= np.round(dfrac)
+        dr = dfrac @ supercell.cell.array
+        distances = np.linalg.norm(dr, axis=1)
+        supercell = supercell[np.argsort(distances)]
+
     name = infile.split('/')[-1].split('.')[0]
     types = supercell.get_chemical_symbols()
-    frac_coords = supercell.get_scaled_positions()
+    frac_coords = supercell.get_scaled_positions(wrap=True)
 
     try:
         f = open(outfile, "wt")

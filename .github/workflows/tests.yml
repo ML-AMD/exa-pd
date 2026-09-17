@@ -1,0 +1,42 @@
+name: Tests
+
+on:
+  push:
+    branches: ["**"]
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Cache conda packages
+        uses: actions/cache@v3
+        with:
+          path: /home/runner/conda_pkgs_dir
+          key: ${{ runner.os }}-conda-${{ hashFiles('exa_pd_env.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-conda-
+
+      - name: Setup miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          environment-file: exa_pd_env.yml
+          activate-environment: exa_pd_env
+          auto-activate-base: false
+          use-mamba: true
+      
+      - name: Run pytest
+        shell: bash -l {0}
+        env:
+            PYTHONFAULTHANDLER: "1"
+            OMP_NUM_THREADS: "1"
+            MKL_NUM_THREADS: "1"
+            OPENBLAS_NUM_THREADS: "1"
+            NUMEXPR_NUM_THREADS: "1"
+            VECLIB_MAXIMUM_THREADS: "1"
+        run: |
+          export PYTHONPATH="$(pwd):${PYTHONPATH}"
+          conda run -n exa_pd_env pytest -s

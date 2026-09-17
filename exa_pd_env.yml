@@ -6,7 +6,7 @@ dependencies:
   - numpy>=2.0
   - scipy>=1.10
   - ase>=3.24
+  - pytest >= 8.3.5
   - pip
   - pip:
       - parsl>=2025.3.24
-      - exa_pd-0.1.0-py3-none-any.whl
