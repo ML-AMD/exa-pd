@@ -36,7 +36,7 @@ Exa-PD is a highly parallelizable workflow designed for the construction of mult
 
 ![Phase diagram of the Cu–Zr system predicted by exa-PD using an EAM-FS potential.](Cu-Zr-PhaseDiagram.png){ width=80% }
 
-By leveraging Parsl, a parallel programming library for Python, exa-PD enables scalable execution of large ensembles of MD and MC simulations with internal task dependencies across heterogeneous resources. The framework supports efficient scaling from a single workstation to multi-node supercomputers and exhibits near-linear scaling up to 32 GPU nodes and 32 CPU nodes through dynamic task distribution, as shown by the benchmark results in Ref. [@zhang_exapd_2025] and in Figure 3 of this work.
+By leveraging Parsl, a parallel programming library for Python, exa-PD enables scalable execution of large ensembles of MD and MC simulations with internal task dependencies across heterogeneous resources. The framework supports efficient scaling from a single workstation to multi-node supercomputers and exhibits near-linear scaling up to 32 GPU nodes and 32 CPU nodes through dynamic task distribution, as shown by the benchmark results in Ref. [@zhang_exapd_2026] and in Figure 3 of this work.
 
 # Statement of Need
 Computational materials discovery has progressed rapidly with advances in computing and AI/ML techniques. However, experimental validation remains limited, largely due to insufficient knowledge of viable synthesis pathways. Reliable multi-element phase diagrams are therefore essential for resolving thermodynamic phase competition under synthesis conditions and for predicting synthesizability. Constructing these phase diagrams computationally requires highly accurate free-energy calculations.
