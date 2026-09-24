@@ -316,7 +316,7 @@ def process_solid(general, solid, write_file=True):
         fixCM = solid["fix_CM"]
     except KeyError:
         fixCM = True
-                
+
     # create a finer T-mesh for smooth free energy
     if general.units == "lj":
         kb = 1
