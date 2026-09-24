@@ -311,6 +311,12 @@ def process_solid(general, solid, write_file=True):
     except KeyError:
         if Tlist is None:
             exapd_logger.critical("Tlist cannot be created for solid.")
+
+    try:
+        fixCM = solid["fix_CM"]
+    except KeyError:
+        fixCM = True
+
     # create a finer T-mesh for smooth free energy
     if general.units == "lj":
         kb = 1
@@ -348,7 +354,7 @@ def process_solid(general, solid, write_file=True):
                 pre_var_values.append(f"c_c{i + 1}[4]")
         depend = (pre_job_dir, pre_var_names, pre_var_values)
         sol_ti = einstein(
-            data_in, dlbd, Tlist[0], directory=f"{phdir}/einstein")
+            data_in, dlbd, Tlist[0], fixCM, directory=f"{phdir}/einstein")
         G0 = sol_ti.process(general, depend)
         Gall = Gibbs_Helmholtz(arrT, arrH, Tlist[0], G0, Tall)
         if write_file:
