@@ -50,18 +50,20 @@ def liquidJobs(general, liquid):
 
     ncomp = liquid.get("ncomp", 10)
 
-    try:
-        ref_pair_style = liquid["ref_pair_style"]
-        ref_pair_coeff = liquid["ref_pair_coeff"]
-        gen_ref_pair = lammpsPair(ref_pair_style, ref_pair_coeff)
-    except KeyError:
+    ref_pair_style = liquid.get("ref_pair_style")
+    ref_pair_coeff = liquid.get("ref_pair_coeff")
+    if "ref_pair_style" in liquid and "ref_pair_coeff" in liquid:
+        try:
+            gen_ref_pair = lammpsPair(ref_pair_style, ref_pair_coeff)
+        except KeyError:
+            gen_ref_pair = None
+    else:
         gen_ref_pair = None
 
     dlbd = liquid.get("dlbd", 0.05)
-    try:
-        Tlist = np.sort(liquid["Tlist"])
-    except KeyError:
-        Tlist = None
+    Tlist = liquid.get("Tlist")
+    if Tlist is not None:
+        Tlist = np.sort(Tlist)
 
     try:
         Tmin = liquid["Tmin"]
@@ -154,15 +156,11 @@ def solidJobs(general, solid):
 
     phases = solid["phases"]
 
-    try:
-        dlbd = solid["dlbd"]
-    except KeyError:
-        dlbd = 0.05
+    dlbd = solid.get("dlbd", 0.05)
 
-    try:
-        Tlist = np.sort(solid["Tlist"])
-    except KeyError:
-        Tlist = None
+    Tlist = solid.get("Tlist")
+    if Tlist is not None:
+        Tlist = np.sort(Tlist)
 
     try:
         Tmin = solid["Tmin"]
@@ -176,10 +174,7 @@ def solidJobs(general, solid):
         if Tlist is None:
             exapd_logger.critical("Tlist cannot be created for solid.")
 
-    try:
-        ntarget = solid["ntarget"]
-    except KeyError:
-        ntarget = 5000
+    ntarget = solid.get("ntarget", 5000)
 
     sol_jobs = []
 
@@ -268,10 +263,9 @@ def sliJobs(general, sli):
 
     phases = sli["phases"]
 
-    try:
-        Tlist = np.sort(sli["Tlist"])
-    except KeyError:
-        Tlist = None
+    Tlist = sli.get("Tlist")
+    if Tlist is not None:
+        Tlist = np.sort(Tlist)
 
     try:
         Tmin = sli["Tmin"]
@@ -291,20 +285,11 @@ def sliJobs(general, sli):
         exapd_logger.critical(
             f"{e}: a high T for melting half of the box is needed.")
 
-    try:
-        ntarget = sli["ntarget"]
-    except KeyError:
-        ntarget = 5000
+    ntarget = sli.get("ntarget", 5000)
 
-    try:
-        replicate = sli["replicate"]
-    except KeyError:
-        replicate = 2
+    replicate = sli.get("replicate", 2)
 
-    try:
-        orient = sli["orientation"]
-    except KeyError:
-        orient = "z"
+    orient = sli.get("orientation", "z")
 
     if orient not in ("x", "y", "z"):
         exapd_logger.critical(
@@ -372,10 +357,9 @@ def sgmcJobs(general, sgmc):
 
     phases = sgmc["phases"]
 
-    try:
-        Tlist = np.sort(sgmc["Tlist"])
-    except KeyError:
-        Tlist = None
+    Tlist = sgmc.get("Tlist")
+    if Tlist is not None:
+        Tlist = np.sort(Tlist)
 
     try:
         Tmin = sgmc["Tmin"]
@@ -389,10 +373,9 @@ def sgmcJobs(general, sgmc):
         if Tlist is None:
             exapd_logger.critical("Tlist cannot be created for SGMC.")
 
-    try:
-        mu_list = np.sort(sgmc["mu_list"])
-    except KeyError:
-        mu_list = None
+    mu_list = sgmc.get("mu_list")
+    if mu_list is not None:
+        mu_list = np.sort(mu_list)
 
     try:
         mu_min = sgmc["mu_min"]
@@ -409,10 +392,7 @@ def sgmcJobs(general, sgmc):
         if mu_list is None:
             exapd_logger.critical("mu_list cannot be created for solid.")
 
-    try:
-        ntarget = sgmc["ntarget"]
-    except KeyError:
-        ntarget = 5000
+    ntarget = sgmc.get("ntarget", 5000)
 
     sgmc_jobs = []
 
@@ -475,10 +455,9 @@ def pemJobs(general, pem):
 
     phases = pem["phases"]
 
-    try:
-        Tlist = np.sort(pem["Tlist"])
-    except KeyError:
-        Tlist = None
+    Tlist = pem.get("Tlist")
+    if Tlist is not None:
+        Tlist = np.sort(Tlist)
 
     try:
         Tmin = pem["Tmin"]
@@ -498,26 +477,15 @@ def pemJobs(general, pem):
         exapd_logger.critical(
             f"{e}: a high T for melting the crystal phase is needed.")
 
-    try:
-        ntarget = pem["ntarget"]
-    except KeyError:
-        ntarget = 5000
+    ntarget = pem.get("ntarget", 5000)
 
-    try:
-        repeat = pem["repeat"]
-    except KeyError:
-        repeat = 1
+    repeat = pem.get("repeat", 1)
 
     try:
         rcut = pem["rcut"]
     except Exception as e:
         exapd_logger.critical(
             f"{e}: rcut for defining nearest neighbors is needed.")
-
-    try:
-        Sc = pem["Sc"]
-    except KeyError:
-        Sc = 0.5
 
     try:
         Nembryo = pem["Nembryo"]
@@ -531,10 +499,46 @@ def pemJobs(general, pem):
         exapd_logger.critical(
             f"{e}: sub-critical size for removing springs is needed.")
 
-    try:
-        minNeigh = pem["minNeigh"]
-    except KeyError:
-        minNeigh = 5
+    op = pem.get("order_parameter", {})
+    method = op.get("method", "alignment")
+    
+    if method == "alignment":
+        for key in ("score_cut", "template"):
+            if key not in op:
+                exapd_logger.critical(
+                    f"Missing required alignment parameter: {key}"
+                )
+    
+        template = os.path.abspath(op["template"])
+        if not os.path.isfile(template):
+            exapd_logger.critical(
+                f"PEM alignment template file does not exist: {template}"
+            )
+    
+        order_parameter = {
+            "method": method,
+            "score_cut": op["score_cut"],
+            "cluster_cut": op.get("cluster_cut", 5.0),
+            "template": template
+        }
+    
+    elif method == "boo":
+        for key in ("boo_cut", "minNeigh"):
+            if key not in op:
+                exapd_logger.critical(
+                    f"Missing required BOO parameter: {key}"
+                )
+    
+        order_parameter = {
+            "method": method,
+            "boo_cut": op["boo_cut"],
+            "minNeigh": op["minNeigh"]
+        }
+    
+    else:
+        exapd_logger.critical(
+            f"Unknown PEM order parameter method: {method}"
+        )
 
     pem_jobs = []
 
@@ -566,7 +570,7 @@ def pemJobs(general, pem):
 
         mypem = pem_simulator(
             data_in, Tlist, Tmelt, f"{phdir}",
-            rcut, Nembryo, Nsc, repeat, Sc, minNeigh
+            rcut, Nembryo, Nsc, repeat, order_parameter 
         )
         mypem.setup(general)
         pem_jobs += mypem.get_joblist()

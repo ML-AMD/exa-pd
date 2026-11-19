@@ -69,24 +69,15 @@ def process_liquid(general, liquid, write_file=True):
     # normalize comp0 and comp1
     comp0 = np.array(comp0) / sum(comp0)
     comp1 = np.array(comp1) / sum(comp1)
-    try:
-        ncomp = liquid["ncomp"]
-    except KeyError:
-        ncomp = 10
+    ncomp = liquid.get("ncomp", 10)
     try:
         ref_pair_style = liquid["ref_pair_style"]
         ref_pair_coeff = liquid["ref_pair_coeff"]
         gen_ref_pair = lammpsPair(ref_pair_style, ref_pair_coeff)
     except KeyError:
         gen_ref_pair = None
-    try:
-        dlbd = liquid["dlbd"]
-    except KeyError:
-        dlbd = 0.05
-    try:
-        Tlist = np.sort(liquid["Tlist"])
-    except KeyError:
-        Tlist = None
+    dlbd = liquid.get("dlbd", 0.05)
+    Tlist = np.sort(liquid["Tlist"]) if "Tlist" in liquid else None
     try:
         Tmin = liquid["Tmin"]
         Tmax = liquid["Tmax"]
@@ -292,14 +283,8 @@ def process_solid(general, solid, write_file=True):
         exapd_logger.critical(f"{sol_dir} does not exist for post-processing.")
 
     phases = solid["phases"]
-    try:
-        dlbd = solid["dlbd"]
-    except KeyError:
-        dlbd = 0.05
-    try:
-        Tlist = np.sort(solid["Tlist"])
-    except KeyError:
-        Tlist = None
+    dlbd = solid.get("dlbd", 0.05)
+    Tlist = np.sort(solid["Tlist"]) if "Tlist" in solid else None
     try:
         Tmin = solid["Tmin"]
         Tmax = solid["Tmax"]

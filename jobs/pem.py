@@ -27,12 +27,14 @@ class pem_simulator(lammpsJobGroup):
     repeat:
         Number of independent simulations, each initiated with a different
         random seed.
-    Sc:
-        Cut-off value for order parameter.
-    Nsc:
+    Nembryo : int
+        Number of atoms in the initial crystal embryo.
+    Nsc : int
         Sub-critical size for terminating the spring force.
-    minNeigh:
-        Number of minimal neighbors in solid-phase.
+    order_parameter : dict
+        Validated order-parameter configuration provided by pemJobs.
+        Alignment uses "score_cut", "template", and "cluster_cut";
+        BOO uses "boo_cut" and "minNeigh".
     """
 
     def __init__(self,
@@ -43,9 +45,8 @@ class pem_simulator(lammpsJobGroup):
                  rcut,
                  Nembryo,
                  Nsc,
-                 repeat=1,
-                 Sc=0.5,
-                 minNeigh=5):
+                 repeat,
+                 order_parameter):
         super().__init__(directory)
         self._datain = data_in
         self._Tlist = Tlist
@@ -54,8 +55,7 @@ class pem_simulator(lammpsJobGroup):
         self._Nembryo = Nembryo
         self._Nsc = Nsc
         self._repeat = repeat
-        self._Sc = Sc
-        self._minNeigh = minNeigh
+        self.order_parameter = order_parameter
         natom, ntyp, nab = read_lmp_data(self._datain, read_nab=True)
         self._natom = natom
         self._ntyp = ntyp
@@ -95,10 +95,8 @@ class pem_simulator(lammpsJobGroup):
         T : float
             Target temperature.
         """
-        baro_style = f"iso {
-            general.pressure} {
-            general.pressure} {
-            general.Pdamp}"
+        baro_style = (f"iso {general.pressure} {general.pressure} "
+                      f"{general.Pdamp}")
         f = open(scriptFile, 'wt')
         f.write("# Persistent Embryo Method nucleation simulation\n")
         f.write("\n")
@@ -119,40 +117,92 @@ class pem_simulator(lammpsJobGroup):
 
         f.write("# set constant\n")
         f.write("   # MD\n")
-        f.write(
-            f"   variable        vseed equal {
-                np.random.randint(1000000)}\n")
+        f.write(f"   variable        vseed equal {np.random.randint(1000000)}\n")
         f.write(f"   variable        temp equal {T}\n")
         f.write(f"   variable        htemp equal {self._Tmelt}\n")
         f.write("   variable        nloop equal 10000\n")
-        f.write("   # BOO_Q6 parameter\n")
         f.write(f"   variable        rcut equal {self._rcut}\n")
-        f.write(f"   variable        qq6_cut equal {self._Sc}\n")
-        f.write(f"   variable        connect_cut equal {self._minNeigh}\n")
+        method = self.order_parameter["method"]
+        if method == "alignment":
+            score_cut = self.order_parameter["score_cut"]
+            cluster_cut = self.order_parameter["cluster_cut"]
+            template = self.order_parameter["template"]
+            f.write("   # Template alignment parameters\n")
+            f.write(f"   variable        score_cut equal {score_cut}\n")
+            f.write(f"   variable        cluster_cut equal {cluster_cut}\n")
+        elif method == "boo":
+            boo_cut = self.order_parameter["boo_cut"]
+            minNeigh = self.order_parameter["minNeigh"]
+            f.write("   # BOO_Q6 parameters\n")
+            f.write(f"   variable        qq6_cut equal {boo_cut}\n")
+            f.write(f"   variable        connect_cut equal {minNeigh}\n")
         f.write("   # spring constant k=kspr0*scaler, while scaler=(Nsc-Nsolid)/Nsc\n")
         f.write("   variable        kspr0 equal 100\n")
-        f.write("   variable        time_window equal 3000 # *1fs, the time window to change the spring constant\n")
+        f.write("   variable        time_window equal 3000\n")
         f.write(
-            "   variable        dump_window equal 200 # *1fs, the time window to dump trajectory\n")
+            "   variable        dump_window equal 10000\n")
         f.write(f"   variable        Nsc equal {self._Nsc}\n")
         f.write(f"   variable        Nbreak equal {5 * self._Nsc}\n\n")
 
-        f.write("# thermo\n")
+        f.write("# set embryo (seed) at the center of the box\n")
+        f.write(f"group           seed id <= {self._Nembryo}\n")
+        f.write(f"group           liquid id > {self._Nembryo}\n")
+        f.write("\n")
+        f.write("# crystalline order parameter\n")
+        if method == "alignment":
+            f.write(
+                f"compute         pemscore all align/template/atom/kk {template} "
+                "${cluster_cut} random_time 100 resize 5\n")
+            f.write("variable        solid_atom atom \"c_pemscore <= v_score_cut\"\n")
+            f.write(
+                "group           solid dynamic all var solid_atom every ${time_window}\n")
+            dump_op = "c_pemscore"
+        elif method == "boo":
+            f.write(
+                "compute         Q6 all orientorder/atom degrees 1 6 components 6 nnn NULL cutoff ${rcut}\n")
+            f.write(
+                "compute         QConn all coord/atom orientorder Q6 ${qq6_cut}\n")
+            f.write("variable        q6Coor atom \"c_QConn >= v_connect_cut\"\n")
+            f.write(
+                "group           solid dynamic all var q6Coor every ${time_window}\n")
+            dump_op = "c_QConn"
+        f.write("compute         clustering solid cluster/atom ${rcut}\n")
+        f.write("compute         cluster_index solid chunk/atom c_clustering\n")
+        f.write(
+            "compute         cluster_size  solid property/chunk cluster_index count\n")
+        f.write("variable        Nsolid equal max(c_cluster_size)\n")
+
         if general.timestep is not None:
             f.write(f"timestep        {general.timestep}\n")
-        f.write(f"group seed id <= {self._Nembryo}\n")
-        f.write(f"group liquid id > {self._Nembryo}\n")
+        f.write("\n")
         f.write("compute         scom seed com\n")
+        f.write("variable        scomx equal c_scom[1]\n")
+        f.write("variable        scomy equal c_scom[2]\n")
+        f.write("variable        scomz equal c_scom[3]\n")
+        f.write("\n")
         f.write(f"thermo          {general.thermo}\n")
         f.write(
-            "thermo_style    custom step temp etotal pe ke press enthalpy vol c_scom[1] c_scom[2] c_scom[3]\n\n")
+            "thermo_style    custom step temp etotal pe ke press enthalpy vol v_scomx v_scomy v_scomz\n\n")
 
         f.write("# generate initial liquid\n")
-        # f.write("reset_atoms id\n")
-        f.write("velocity all create ${temp} ${vseed} rot yes dist gaussian\n")
+        f.write("velocity all create ${htemp} ${vseed} rot yes dist gaussian\n")
         f.write(
             f"fix            anneal liquid npt temp ${{htemp}} ${{htemp}} {general.Tdamp} {baro_style}\n")
-        f.write("run            100000\n")
+        f.write(f"variable       nsolid_stop equal {self._Nembryo}\n")
+        f.write("label          melt_loop\n")
+        f.write("   variable       iblock loop 100\n")
+        f.write("   run            ${time_window}\n")
+        f.write('   print          "Melt check: step = $(step), Nsolid = ${Nsolid}"\n')
+        f.write('   if "${Nsolid} < ${nsolid_stop}" then "jump SELF melt_done"\n')
+        f.write("   next           iblock\n")
+        f.write("   jump           SELF melt_loop\n")
+        f.write('print          "WARNING: Melting criterion not reached"\n')
+        f.write("jump           SELF melt_finish\n")
+        f.write("label          melt_done\n")
+        f.write('print          "Melting criterion satisfied at step $(step)"\n')
+        f.write("label          melt_finish\n")
+        f.write("run            10000 # additional high-temperature melting safeguard\n")
+        f.write('print          "Liquid background successfully melted at step $(step)"\n')
         f.write("unfix          anneal\n")
         f.write(
             f"fix            cool liquid npt temp ${{htemp}} ${{temp}} {general.Tdamp} {baro_style}\n")
@@ -162,7 +212,7 @@ class pem_simulator(lammpsJobGroup):
 
         f.write("variable        scaler equal 0.01\n")
         f.write("variable        kspr equal ${kspr0}*${scaler}\n")
-        f.write("# equilibrium\n")
+        f.write("# equilibrate\n")
         f.write("fix             spring seed spring/self ${kspr} xyz\n")
         f.write("fix_modify      spring energy no\n")
         f.write(
@@ -176,27 +226,11 @@ class pem_simulator(lammpsJobGroup):
 
         f.write("# nucleation start\n")
         f.write("reset_timestep  0\n")
-        f.write("\n")
-
-        f.write("# compute Q6.Q6*\n")
-        f.write("thermo          100\n")
+        f.write("thermo          1000\n")
         f.write(
-            "compute         Q6 all orientorder/atom degrees 1 6 components 6 nnn NULL cutoff ${rcut}\n")
-        f.write(
-            "compute         QConn all coord/atom orientorder Q6 ${qq6_cut}\n")
-        f.write("compute         sum_conn all reduce sum c_QConn\n")
-        f.write("variable        q6Coor atom \"c_QConn >= v_connect_cut\"\n")
-        f.write(
-            "group           solid dynamic all var q6Coor every ${time_window}\n")
-        f.write("compute         clustering solid cluster/atom ${rcut}\n")
-        f.write("compute         cluster_index solid chunk/atom c_clustering\n")
-        f.write(
-            "compute         cluster_size  solid property/chunk cluster_index count\n")
-        f.write("variable        Nsolid equal max(c_cluster_size)\n")
-        f.write(
-            "thermo_style    custom step temp etotal pe ke press enthalpy vol c_scom[1] c_scom[2] c_scom[3] c_sum_conn v_Nsolid\n")
-        f.write("run 0\n")
-        f.write("print \"ok\"\n")
+            "thermo_style    custom step temp etotal pe ke press enthalpy vol "
+            f"v_scomx v_scomy v_scomz v_Nsolid\n")
+        f.write("run             0\n")
         f.write("\n")
 
         f.write("# NPT\n")
@@ -206,17 +240,8 @@ class pem_simulator(lammpsJobGroup):
         f.write("fix             com_seed seed recenter INIT INIT INIT shift all\n")
         f.write("\n")
 
-        f.write("# compute position\n")
+        f.write("#define unwrapped positions relative to COM\n")
         f.write("compute         uwpos all property/atom xu yu zu\n")
-        f.write("\n")
-
-        f.write("# define equal-style variables for COM components\n")
-        f.write("variable        scomx equal c_scom[1]\n")
-        f.write("variable        scomy equal c_scom[2]\n")
-        f.write("variable        scomz equal c_scom[3]\n")
-        f.write("\n")
-
-        f.write("# now define per-atom variables relative to COM\n")
         f.write("variable        px  atom c_uwpos[1]-v_scomx\n")
         f.write("variable        py  atom c_uwpos[2]-v_scomy\n")
         f.write("variable        pz  atom c_uwpos[3]-v_scomz\n")
@@ -229,7 +254,13 @@ class pem_simulator(lammpsJobGroup):
         f.write("variable        scaler equal 0.1\n")
         f.write("\n")
 
-        f.write("# loop starts\n")
+        f.write(
+            "thermo_style    custom step temp etotal pe ke press enthalpy vol v_Nsolid  v_kspr\n")
+        f.write(
+            "dump            2 all custom ${dump_window} all.*.atom "
+            f"id type xs ys zs vx vy vz {dump_op}\n")
+        f.write("dump_modify     2 sort id\n\n")
+        f.write("# pem loop starts\n")
         f.write("label           loop_mark\n")
         f.write("   variable        j loop ${nloop}\n")
         f.write("   variable        kspr equal ${kspr0}*${scaler}\n")
@@ -239,11 +270,6 @@ class pem_simulator(lammpsJobGroup):
         f.write("   variable        sprz atom ${kspr}*(f_pseed0[3]-v_pz)\n")
         f.write(
             "   fix             spring seed addforce v_sprx v_spry v_sprz every 1\n")
-        f.write(
-            "   thermo_style    custom step temp etotal pe ke press enthalpy vol v_Nsolid  v_kspr\n")
-        f.write(
-            "   dump            2 all custom ${dump_window} all.*.atom id type xs ys zs vx vy vz c_QConn\n")
-        f.write("   dump_modify     2 sort id\n")
         f.write("   run             ${time_window}\n")
         f.write("\n")
         f.write("   # update spring constant according to Nsolid\n")
@@ -253,11 +279,11 @@ class pem_simulator(lammpsJobGroup):
             "   print           \"LOOP= ${j} k= ${kspr} finished. Nsolid= ${Nsolid} Nsc= ${Nsc}\"\n")
         f.write("\n")
         f.write("   if \"${Nsolid} > ${Nbreak}\" then \"jump  SELF break\"\n")
-        f.write("   undump          2\n")
         f.write("   unfix           spring\n")
         f.write("   next            j\n")
         f.write("   jump            SELF loop_mark\n")
         f.write("\n")
         f.write("label           break\n")
+        f.write("undump          2\n")
 
         f.close()
