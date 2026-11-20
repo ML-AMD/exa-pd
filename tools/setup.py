@@ -501,44 +501,46 @@ def pemJobs(general, pem):
 
     op = pem.get("order_parameter", {})
     method = op.get("method", "alignment")
-    
+
     if method == "alignment":
         for key in ("score_cut", "template"):
             if key not in op:
                 exapd_logger.critical(
                     f"Missing required alignment parameter: {key}"
                 )
-    
+
         template = os.path.abspath(op["template"])
         if not os.path.isfile(template):
             exapd_logger.critical(
                 f"PEM alignment template file does not exist: {template}"
             )
-    
+
         order_parameter = {
             "method": method,
             "score_cut": op["score_cut"],
             "cluster_cut": op.get("cluster_cut", 5.0),
             "template": template
         }
-    
+
     elif method == "boo":
         for key in ("boo_cut", "minNeigh"):
             if key not in op:
                 exapd_logger.critical(
                     f"Missing required BOO parameter: {key}"
                 )
-    
+
         order_parameter = {
             "method": method,
             "boo_cut": op["boo_cut"],
             "minNeigh": op["minNeigh"]
         }
-    
+
     else:
         exapd_logger.critical(
             f"Unknown PEM order parameter method: {method}"
         )
+
+    extra = pem.get("extra", {})
 
     pem_jobs = []
 
@@ -570,7 +572,7 @@ def pemJobs(general, pem):
 
         mypem = pem_simulator(
             data_in, Tlist, Tmelt, f"{phdir}",
-            rcut, Nembryo, Nsc, repeat, order_parameter 
+            rcut, Nembryo, Nsc, repeat, order_parameter, extra
         )
         mypem.setup(general)
         pem_jobs += mypem.get_joblist()
